@@ -1,0 +1,18 @@
+
+> web@0.1.0 lint /Users/sarvesh/Desktop/PL/AI/incident-intelligence-platform/apps/web
+> eslint
+
+
+/Users/sarvesh/Desktop/PL/AI/incident-intelligence-platform/apps/web/src/app/(dashboard)/incidents/page.tsx
+  77:6  warning  React Hook useEffect has an unnecessary dependency: 'queryClient'. Either exclude it or remove the dependency array. Outer scope values like 'queryClient' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+  79:9  warning  'severityAnalytics' is assigned a value but never used                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+
+/Users/sarvesh/Desktop/PL/AI/incident-intelligence-platform/apps/web/src/components/dashboard/command-pallet.tsx
+  4:10  warning  'motion' is defined but never used           @typescript-eslint/no-unused-vars
+  4:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/sarvesh/Desktop/PL/AI/incident-intelligence-platform/apps/web/src/components/dashboard/incident-trends-chart.tsx
+  41:24  warning  'setVisibleRange' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 5 problems (0 errors, 5 warnings)
+

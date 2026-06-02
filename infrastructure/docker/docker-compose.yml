@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: incident-intelligence-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: incident_intelligence
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - incident_postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: incident-intelligence-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+
+volumes:
+  incident_postgres_data:
