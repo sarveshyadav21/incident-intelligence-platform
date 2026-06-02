@@ -25,6 +25,7 @@ model Incident {
   updatedAt DateTime @updatedAt
 
   uploads        Upload[]
+  feedback       IncidentFeedback[]
   hypotheses     RootCauseHypothesis[]
   evaluations    IncidentEvaluation[]
   timelineEvents IncidentTimelineEvent[]
@@ -44,12 +45,42 @@ model Upload {
   fileName   String
   mimeType   String
   storageKey String
+  parsedText String?
+  status     UploadStatus @default(PENDING)
 
   createdAt DateTime @default(now())
 
   incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
 
   @@map("uploads")
+}
+
+model IncidentFeedback {
+  id             String         @id @default(cuid())
+  incidentId     String
+  field          String
+  action         FeedbackAction
+  originalValue  String?
+  correctedValue String?
+  reason         String?
+
+  createdAt DateTime @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("incident_feedback")
+}
+
+enum UploadStatus {
+  PENDING
+  PARSED
+  FAILED
+}
+
+enum FeedbackAction {
+  ACCEPT
+  REJECT
+  EDIT
 }
 
 model RootCauseHypothesis {

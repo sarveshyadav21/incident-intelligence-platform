@@ -48,12 +48,22 @@ export class IncidentAnalysisOrchestrator {
   async analyze(input: {
     logs: string;
     historicalContext?: string;
+    humanFeedbackContext?: string;
     similarIncidentCount: number;
     similarityScores: number[];
     inputProfile?: IncidentInputProfile;
+    streamContext?: { incidentId: string; jobId: string };
   }): Promise<OrchestratedIncidentAnalysis> {
-    const evidence = await this.evidenceExtractionAgent.extractEvidence(
-      input.logs,
+    const enrichedLogs = input.humanFeedbackContext
+      ? `${input.logs}\n\n--- Human corrections ---\n${input.humanFeedbackContext}`
+      : input.logs;
+
+    const evidence =
+      await this.evidenceExtractionAgent.extractEvidence(enrichedLogs);
+
+    const summaryPromise = this.summaryAgent.generateSummary(
+      enrichedLogs,
+      input.streamContext,
     );
 
     const [
@@ -65,13 +75,13 @@ export class IncidentAnalysisOrchestrator {
       affectedServices,
       detectionSource,
     ] = await Promise.all([
-      this.severityAgent.classifySeverity(input.logs),
-      this.rcaAgent.analyzeRootCause(input.logs, input.historicalContext),
-      this.remediationAgent.generateRemediationSteps(input.logs),
-      this.summaryAgent.generateSummary(input.logs),
-      this.impactAssessmentAgent.assessImpact(input.logs),
-      this.affectedServicesAgent.identifyAffectedServices(input.logs),
-      this.detectionSourceAgent.identifyDetectionSource(input.logs),
+      this.severityAgent.classifySeverity(enrichedLogs),
+      this.rcaAgent.analyzeRootCause(enrichedLogs, input.historicalContext),
+      this.remediationAgent.generateRemediationSteps(enrichedLogs),
+      summaryPromise,
+      this.impactAssessmentAgent.assessImpact(enrichedLogs),
+      this.affectedServicesAgent.identifyAffectedServices(enrichedLogs),
+      this.detectionSourceAgent.identifyDetectionSource(enrichedLogs),
     ]);
 
     const analysisWithoutConfidence = {
@@ -86,7 +96,7 @@ export class IncidentAnalysisOrchestrator {
 
     const averageSimilarity = this.calculateAverage(input.similarityScores);
     const confidence = await this.confidenceAgent.scoreConfidence({
-      logs: input.logs,
+      logs: enrichedLogs,
       analysis: analysisWithoutConfidence,
       similarIncidentCount: input.similarIncidentCount,
       averageSimilarity,
@@ -99,13 +109,13 @@ export class IncidentAnalysisOrchestrator {
     });
 
     const situationJudgment = await this.situationJudgeAgent.judgeSituation({
-      logs: input.logs,
+      logs: enrichedLogs,
       analysis: initialAnalysis,
       evidence,
     });
 
     const review = await this.evidenceReviewAgent.reviewAnalysis({
-      logs: input.logs,
+      logs: enrichedLogs,
       analysis: initialAnalysis,
       evidence,
       situationJudgment,

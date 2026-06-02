@@ -46,7 +46,19 @@ export class IncidentsAnalyticsService {
 
       const key = `${hour}:00`;
 
-      buckets[key][incident.severity] += 1;
+      const severityBucket =
+        incident.status === 'COMPLETED' && incident.aiSeverity
+          ? incident.aiSeverity
+          : incident.severity;
+
+      if (
+        severityBucket === 'CRITICAL' ||
+        severityBucket === 'HIGH' ||
+        severityBucket === 'MEDIUM' ||
+        severityBucket === 'LOW'
+      ) {
+        buckets[key][severityBucket] += 1;
+      }
     });
 
     return Object.values(buckets);

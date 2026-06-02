@@ -18,4 +18,8 @@ export class AnalyzeAndStoreIncidentDto {
   @IsString()
   @IsOptional()
   incidentId: string;
+
+  @IsOptional()
+  @IsString()
+  humanFeedbackContext?: string;
 }

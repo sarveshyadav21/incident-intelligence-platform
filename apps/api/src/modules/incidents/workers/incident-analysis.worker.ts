@@ -27,7 +27,9 @@ export class IncidentAnalysisWorker extends WorkerHost {
     try {
       console.log(`Processing incident job: ${job.data.trackingId}`);
 
-      this.incidentsGateway.emitJobProgress(job.data.trackingId, 'JOB_STARTED');
+      this.incidentsGateway.emitJobProgress(job.data.trackingId, 'JOB_STARTED', {
+        incidentId: job.data.incidentId,
+      });
 
       await this.timelineService.logEvent({
         jobId: job.data.trackingId,
@@ -77,7 +79,11 @@ export class IncidentAnalysisWorker extends WorkerHost {
 
         stage: 'REMEDIATION_GENERATED',
       });
-      this.incidentsGateway.emitIncidentCompleted(job.data.trackingId, result);
+      this.incidentsGateway.emitIncidentCompleted(
+        job.data.trackingId,
+        result,
+        job.data.incidentId,
+      );
       await this.timelineService.logEvent({
         jobId: job.data.trackingId,
 
@@ -114,7 +120,9 @@ export class IncidentAnalysisWorker extends WorkerHost {
         },
       });
 
-      this.incidentsGateway.emitJobProgress(job.data.trackingId, 'JOB_FAILED');
+      this.incidentsGateway.emitJobProgress(job.data.trackingId, 'JOB_FAILED', {
+        incidentId: job.data.incidentId,
+      });
 
       throw error;
     }
