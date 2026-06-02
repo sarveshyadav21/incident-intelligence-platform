@@ -22,6 +22,9 @@ import { IncidentAnalysisOrchestrator } from './orchestration/incident-analysis-
 import { IncidentInputNormalizerService } from './services/incident-input-normalizer.service';
 import { EvidenceExtractionAgent } from './agents/evidence-extraction.agent';
 import { SituationJudgeAgent } from './agents/situation-judge.agent';
+import { FileParserService } from './services/file-parser.service';
+import { IncidentUploadService } from './services/incident-upload.service';
+import { IncidentFeedbackService } from './services/incident-feedback.service';
 @Module({
   imports: [
     BullModule.registerQueue({
@@ -53,6 +56,9 @@ import { SituationJudgeAgent } from './agents/situation-judge.agent';
     IncidentEvaluationService,
     TimelineService,
     IncidentsAnalyticsService,
+    FileParserService,
+    IncidentUploadService,
+    IncidentFeedbackService,
   ],
 })
 export class IncidentsModule {}

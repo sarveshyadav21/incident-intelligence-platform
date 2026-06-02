@@ -9,6 +9,8 @@ import { IncidentsGateway } from '../../infrastructure/websocket/incidents.gatew
 import { TimelineService } from './timeline/incident-timeline.service';
 import { IncidentAnalysisOrchestrator } from './orchestration/incident-analysis-orchestrator';
 import { IncidentInputNormalizerService } from './services/incident-input-normalizer.service';
+import { IncidentUploadService } from './services/incident-upload.service';
+import { IncidentFeedbackService } from './services/incident-feedback.service';
 @Injectable()
 export class IncidentsService {
   constructor(
@@ -19,6 +21,8 @@ export class IncidentsService {
     private readonly timelineService: TimelineService,
     private readonly incidentAnalysisOrchestrator: IncidentAnalysisOrchestrator,
     private readonly incidentInputNormalizerService: IncidentInputNormalizerService,
+    private readonly incidentUploadService: IncidentUploadService,
+    private readonly incidentFeedbackService: IncidentFeedbackService,
   ) {}
 
   async createIncident(createIncidentDto: CreateIncidentDto) {
@@ -65,7 +69,9 @@ export class IncidentsService {
       inputProfile.normalizedLogs,
     );
 
-    this.incidentsGateway.emitJobProgress(jobId ?? '', 'EMBEDDING_GENERATED');
+    this.incidentsGateway.emitJobProgress(jobId ?? '', 'EMBEDDING_GENERATED', {
+      incidentId: analyzeDto.incidentId,
+    });
     await this.timelineService.logEvent({
       jobId: jobId ?? '',
       stage: 'EMBEDDING_GENERATED',
@@ -101,7 +107,10 @@ ${JSON.stringify(incident.remediationSteps)}
       jobId ?? '',
       'SIMILAR_INCIDENTS_RETRIEVED',
       {
-        similarIncidentsCount: filteredIncidents.length,
+        incidentId: analyzeDto.incidentId,
+        data: {
+          similarIncidentsCount: filteredIncidents.length,
+        },
       },
     );
     await this.timelineService.logEvent({
@@ -115,12 +124,19 @@ ${JSON.stringify(incident.remediationSteps)}
       await this.incidentAnalysisOrchestrator.analyze({
         logs: inputProfile.normalizedLogs,
         historicalContext,
+        humanFeedbackContext: analyzeDto.humanFeedbackContext,
         similarIncidentCount: filteredIncidents.length,
         similarityScores,
         inputProfile,
+        streamContext:
+          jobId && analyzeDto.incidentId
+            ? { incidentId: analyzeDto.incidentId, jobId }
+            : undefined,
       });
 
-    this.incidentsGateway.emitJobProgress(jobId ?? '', 'AI_ANALYSIS_COMPLETED');
+    this.incidentsGateway.emitJobProgress(jobId ?? '', 'AI_ANALYSIS_COMPLETED', {
+      incidentId: analyzeDto.incidentId,
+    });
     await this.timelineService.logEvent({
       jobId: jobId ?? '',
       stage: 'AI_ANALYSIS_COMPLETED',
@@ -174,7 +190,9 @@ ${JSON.stringify(incident.remediationSteps)}
       },
     });
 
-    this.incidentsGateway.emitJobProgress(jobId ?? '', 'INCIDENT_PERSISTED');
+    this.incidentsGateway.emitJobProgress(jobId ?? '', 'INCIDENT_PERSISTED', {
+      incidentId: analyzeDto.incidentId,
+    });
     await this.timelineService.logEvent({
       jobId: jobId ?? '',
       stage: 'INCIDENT_PERSISTED',
@@ -192,7 +210,9 @@ ${JSON.stringify(incident.remediationSteps)}
       incident.id,
     );
 
-    this.incidentsGateway.emitJobProgress(jobId ?? '', 'EMBEDDING_STORED');
+    this.incidentsGateway.emitJobProgress(jobId ?? '', 'EMBEDDING_STORED', {
+      incidentId: analyzeDto.incidentId,
+    });
     await this.timelineService.logEvent({
       jobId: jobId ?? '',
       stage: 'EMBEDDING_STORED',
@@ -236,6 +256,12 @@ ${JSON.stringify(incident.remediationSteps)}
         hypotheses: true,
 
         uploads: true,
+
+        feedback: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       },
     });
   }
