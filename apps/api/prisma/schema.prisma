@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Incident {
+  id       String           @id @default(cuid())
+  title    String
+  status   IncidentStatus   @default(PENDING)
+  severity IncidentSeverity
+  source   String?
+  summary  String?
+
+  rootCause        String?
+  aiSeverity       String?
+  remediationSteps Json?
+
+  embedding Unsupported("vector")?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  uploads        Upload[]
+  hypotheses     RootCauseHypothesis[]
+  evaluations    IncidentEvaluation[]
+  timelineEvents IncidentTimelineEvent[]
+  confidenceScore   Float?
+  affectedServices   String[]
+  impactAssessment  String?
+  detectionSource   String?
+  aiSummary         String?
+
+  @@map("incidents")
+}
+
+model Upload {
+  id         String @id @default(cuid())
+  incidentId String
+
+  fileName   String
+  mimeType   String
+  storageKey String
+
+  createdAt DateTime @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("uploads")
+}
+
+model RootCauseHypothesis {
+  id         String @id @default(cuid())
+  incidentId String
+
+  hypothesis      String
+  confidenceScore Float
+  evidence        Json
+
+  createdAt DateTime @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("root_cause_hypotheses")
+}
+
+model IncidentEvaluation {
+  id         String @id @default(cuid())
+  incidentId String
+
+  faithfulnessScore  Float?
+  hallucinationScore Float?
+  accuracyScore      Float?
+
+  createdAt DateTime @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("incident_evaluations")
+}
+
+model IncidentTimelineEvent {
+  id         String  @id @default(cuid())
+  incidentId String?
+
+  jobId String
+  stage String
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  incident Incident? @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("incident_timeline_events")
+}
+
+model IncidentAnalysisJob {
+  id String @id @default(cuid())
+
+  trackingId String @unique
+
+  bullmqJobId String @unique
+
+  status String
+
+  createdAt DateTime @default(now())
+
+  @@map("incident_analysis_jobs")
+}
+
+enum IncidentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
