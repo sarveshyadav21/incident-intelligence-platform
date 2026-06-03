@@ -1,5 +1,5 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-
+import { AgentEvent } from '../../modules/incidents/types/agent-event.type';
 import { Server } from 'socket.io';
 
 @WebSocketGateway({
@@ -11,6 +11,10 @@ import { Server } from 'socket.io';
 export class IncidentsGateway {
   @WebSocketServer()
   server: Server;
+
+  emitAgentLifecycleEvent(incidentId: string, event: AgentEvent) {
+    this.server.to(`incident:${incidentId}`).emit('agent.lifecycle', event);
+  }
 
   emitJobProgress(
     jobId: string,
@@ -25,11 +29,7 @@ export class IncidentsGateway {
     });
   }
 
-  emitIncidentCompleted(
-    jobId: string,
-    result: unknown,
-    incidentId?: string,
-  ) {
+  emitIncidentCompleted(jobId: string, result: unknown, incidentId?: string) {
     this.server.emit('incident-completed', {
       jobId,
       incidentId: incidentId ?? null,

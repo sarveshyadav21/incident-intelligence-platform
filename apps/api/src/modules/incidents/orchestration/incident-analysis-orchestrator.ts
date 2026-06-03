@@ -19,7 +19,7 @@ import { SituationJudgeAgent } from '../agents/situation-judge.agent';
 import { IncidentEvidence } from '../types/evidence.type';
 import { SituationJudgment } from '../types/situation-judgment.type';
 import { IncidentInputProfile } from '../types/input-profile.type';
-
+import { IncidentsGateway } from '../../../infrastructure/websocket/incidents.gateway';
 export type OrchestratedIncidentAnalysis = {
   analysis: IncidentAnalysis;
   review: EvidenceReview;
@@ -44,6 +44,7 @@ export class IncidentAnalysisOrchestrator {
     private readonly evidenceReviewAgent: EvidenceReviewAgent,
     private readonly evidenceExtractionAgent: EvidenceExtractionAgent,
     private readonly situationJudgeAgent: SituationJudgeAgent,
+    private readonly incidentsGateway: IncidentsGateway,
   ) {}
 
   async analyze(input: {
@@ -68,6 +69,12 @@ export class IncidentAnalysisOrchestrator {
     );
 
     this.logger.log('Running Lightweight Parallel Agents');
+    this.emitAgentStarted(
+      input.streamContext?.incidentId ?? 'unknown',
+      'severity',
+    );
+
+    const severityStart = Date.now();
 
     const severityPromise = this.severityAgent.classifySeverity(enrichedLogs);
 
@@ -79,7 +86,24 @@ export class IncidentAnalysisOrchestrator {
     const affectedServicesPromise =
       this.affectedServicesAgent.identifyAffectedServices(enrichedLogs);
 
-    const severity = await severityPromise;
+    let severity;
+    try {
+      severity = await severityPromise;
+
+      this.emitAgentCompleted(
+        input.streamContext?.incidentId ?? 'unknown',
+        'severity',
+        Date.now() - severityStart,
+      );
+    } catch (error) {
+      this.emitAgentFailed(
+        input.streamContext?.incidentId ?? 'unknown',
+        'severity',
+        error,
+      );
+
+      throw error;
+    }
 
     this.logger.log('Severity completed');
 
@@ -191,5 +215,36 @@ export class IncidentAnalysisOrchestrator {
 
   private clampConfidence(score: number): number {
     return Math.max(0, Math.min(100, Number(score.toFixed(2))));
+  }
+  private emitAgentStarted(incidentId: string, agent: string) {
+    this.incidentsGateway.emitAgentLifecycleEvent(incidentId, {
+      agent,
+      status: 'STARTED',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  private emitAgentCompleted(
+    incidentId: string,
+    agent: string,
+    durationMs: number,
+  ) {
+    this.incidentsGateway.emitAgentLifecycleEvent(incidentId, {
+      agent,
+      status: 'COMPLETED',
+      timestamp: new Date().toISOString(),
+      durationMs,
+    });
+  }
+
+  private emitAgentFailed(incidentId: string, agent: string, error: unknown) {
+    this.incidentsGateway.emitAgentLifecycleEvent(incidentId, {
+      agent,
+      status: 'FAILED',
+      timestamp: new Date().toISOString(),
+      metadata: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+    });
   }
 }
