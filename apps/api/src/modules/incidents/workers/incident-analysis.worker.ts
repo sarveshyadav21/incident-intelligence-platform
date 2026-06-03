@@ -14,6 +14,11 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 
 @Processor('incident-analysis')
 export class IncidentAnalysisWorker extends WorkerHost {
+  get workerOptions() {
+    return {
+      concurrency: 1,
+    };
+  }
   constructor(
     private readonly incidentsService: IncidentsService,
     private readonly timelineService: TimelineService,
@@ -27,9 +32,13 @@ export class IncidentAnalysisWorker extends WorkerHost {
     try {
       console.log(`Processing incident job: ${job.data.trackingId}`);
 
-      this.incidentsGateway.emitJobProgress(job.data.trackingId, 'JOB_STARTED', {
-        incidentId: job.data.incidentId,
-      });
+      this.incidentsGateway.emitJobProgress(
+        job.data.trackingId,
+        'JOB_STARTED',
+        {
+          incidentId: job.data.incidentId,
+        },
+      );
 
       await this.timelineService.logEvent({
         jobId: job.data.trackingId,

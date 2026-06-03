@@ -7,14 +7,17 @@ type StreamTokenCallback = (token: string) => void;
 
 @Injectable()
 export class LLMService {
-  async generateTextCompletion(prompt: string): Promise<string> {
+  async generateTextCompletion(
+    prompt: string,
+    model = 'llama3:8b',
+  ): Promise<string> {
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama3:8b',
+        model,
         prompt,
         stream: false,
       }),
@@ -38,6 +41,7 @@ export class LLMService {
   async generateTextCompletionStream(
     prompt: string,
     onToken: StreamTokenCallback,
+    model = 'llama3:8b',
   ): Promise<string> {
     const response = await fetch('http://localhost:11434/api/generate', {
       method: 'POST',
@@ -45,7 +49,7 @@ export class LLMService {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama3:8b',
+        model,
         prompt,
         stream: true,
       }),
@@ -79,7 +83,10 @@ export class LLMService {
         }
 
         try {
-          const chunk = JSON.parse(line) as { response?: string; done?: boolean };
+          const chunk = JSON.parse(line) as {
+            response?: string;
+            done?: boolean;
+          };
           const token = chunk.response ?? '';
 
           if (token) {
@@ -98,13 +105,15 @@ export class LLMService {
   async generateJsonCompletion<T>(
     prompt: string,
     schema: ZodSchema<T>,
+    model = 'llama3:8b',
   ): Promise<T> {
-    const response = await this.generateTextCompletion(prompt);
+    const response = await this.generateTextCompletion(prompt, model);
 
     try {
       return parseJsonResponse(response, schema);
     } catch {
-      const repairResponse = await this.generateTextCompletion(`
+      const repairResponse = await this.generateTextCompletion(
+        `
 The previous response was invalid.
 
 Return ONLY valid JSON matching the requested schema.
@@ -112,7 +121,9 @@ Do not include markdown, commentary, or extra text.
 
 Original task:
 ${prompt}
-`);
+`,
+        model,
+      );
 
       return parseJsonResponse(repairResponse, schema);
     }

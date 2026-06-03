@@ -60,5 +60,6 @@ import { IncidentFeedbackService } from './services/incident-feedback.service';
     IncidentUploadService,
     IncidentFeedbackService,
   ],
+  exports: [IncidentQueueService],
 })
 export class IncidentsModule {}

@@ -11,6 +11,6 @@ export function parseJsonResponse<T>(
   }
 
   const parsed = JSON.parse(extractedJson[0]) as unknown;
-
+  console.log('RAW LLM RESPONSE:', parsed);
   return schema.parse(parsed);
 }

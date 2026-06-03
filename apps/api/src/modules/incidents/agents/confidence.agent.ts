@@ -7,7 +7,7 @@ import {
 } from '../types/agent-confidence.type';
 import { IncidentAnalysis } from '../types/incident-analysis.type';
 import { IncidentEvidence } from '../types/evidence.type';
-
+import { AGENT_MODELS } from '../../../config/agent-models.config';
 @Injectable()
 export class ConfidenceAgent {
   constructor(private readonly llmService: LLMService) {}
@@ -54,6 +54,7 @@ ${input.logs}
     return this.llmService.generateJsonCompletion(
       prompt,
       agentConfidenceSchema,
+      AGENT_MODELS.confidence,
     );
   }
 }

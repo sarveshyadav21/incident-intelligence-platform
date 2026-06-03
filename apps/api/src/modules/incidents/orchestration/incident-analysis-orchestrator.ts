@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import {
   incidentAnalysisSchema,
@@ -31,6 +31,7 @@ export type OrchestratedIncidentAnalysis = {
 
 @Injectable()
 export class IncidentAnalysisOrchestrator {
+  private readonly logger = new Logger(IncidentAnalysisOrchestrator.name);
   constructor(
     private readonly severityAgent: SeverityAgent,
     private readonly rcaAgent: RCAAgent,
@@ -66,24 +67,70 @@ export class IncidentAnalysisOrchestrator {
       input.streamContext,
     );
 
-    const [
-      severity,
-      rootCause,
-      remediationSteps,
-      aiSummary,
-      impactAssessment,
-      affectedServices,
-      detectionSource,
-    ] = await Promise.all([
-      this.severityAgent.classifySeverity(enrichedLogs),
-      this.rcaAgent.analyzeRootCause(enrichedLogs, input.historicalContext),
+    this.logger.log('Running Lightweight Parallel Agents');
+
+    const severityPromise = this.severityAgent.classifySeverity(enrichedLogs);
+
+    const summaryAgentPromise = summaryPromise;
+
+    const detectionSourcePromise =
+      this.detectionSourceAgent.identifyDetectionSource(enrichedLogs);
+
+    const affectedServicesPromise =
+      this.affectedServicesAgent.identifyAffectedServices(enrichedLogs);
+
+    const severity = await severityPromise;
+
+    this.logger.log('Severity completed');
+
+    const aiSummary = await summaryAgentPromise;
+
+    this.logger.log('Summary completed');
+
+    const detectionSource = await detectionSourcePromise;
+
+    this.logger.log('Detection source completed');
+
+    const affectedServices = await affectedServicesPromise;
+
+    this.logger.log('Affected services completed');
+
+    this.logger.log('Lightweight Parallel Agents Completed');
+
+    this.logger.log('Running RCA Agent');
+
+    const rootCause = await this.rcaAgent.analyzeRootCause(
+      enrichedLogs,
+      input.historicalContext,
+    );
+
+    this.logger.log('RCA Agent Completed');
+
+    this.logger.log('Running Medium Parallel Agents');
+
+    const [remediationSteps, impactAssessment, confidence] = await Promise.all([
       this.remediationAgent.generateRemediationSteps(enrichedLogs),
-      summaryPromise,
+
       this.impactAssessmentAgent.assessImpact(enrichedLogs),
-      this.affectedServicesAgent.identifyAffectedServices(enrichedLogs),
-      this.detectionSourceAgent.identifyDetectionSource(enrichedLogs),
+
+      this.confidenceAgent.scoreConfidence({
+        logs: enrichedLogs,
+        analysis: {
+          severity,
+          aiSummary,
+          rootCause,
+          affectedServices,
+          detectionSource,
+          remediationSteps: [],
+          impactAssessment: '',
+        },
+        similarIncidentCount: input.similarIncidentCount,
+        averageSimilarity: this.calculateAverage(input.similarityScores),
+        evidence,
+      }),
     ]);
 
+    this.logger.log('Medium Parallel Agents Completed');
     const analysisWithoutConfidence = {
       severity,
       aiSummary,
@@ -93,15 +140,6 @@ export class IncidentAnalysisOrchestrator {
       remediationSteps,
       detectionSource,
     };
-
-    const averageSimilarity = this.calculateAverage(input.similarityScores);
-    const confidence = await this.confidenceAgent.scoreConfidence({
-      logs: enrichedLogs,
-      analysis: analysisWithoutConfidence,
-      similarIncidentCount: input.similarIncidentCount,
-      averageSimilarity,
-      evidence,
-    });
 
     const initialAnalysis = incidentAnalysisSchema.parse({
       ...analysisWithoutConfidence,
@@ -129,7 +167,7 @@ export class IncidentAnalysisOrchestrator {
       ...initialAnalysis,
       confidenceScore: adjustedConfidence,
     });
-
+    this.logger.log('Incident analysis orchestration completed');
     return {
       analysis: finalAnalysis,
       review,

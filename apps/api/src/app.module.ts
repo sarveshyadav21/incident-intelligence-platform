@@ -8,6 +8,7 @@ import { IncidentsModule } from './modules/incidents/incidents.module';
 import { LLMModule } from './infrastructure/llm/llm.module';
 import { EmbeddingModule } from './infrastructure/embeddings/embedding.module';
 import { QueueModule } from './infrastructure/queue/queue.module';
+import { DatadogModule } from './modules/integrations/datadog/datadog.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -24,6 +25,7 @@ import { QueueModule } from './infrastructure/queue/queue.module';
     LLMModule,
     EmbeddingModule,
     QueueModule,
+    DatadogModule,
   ],
 })
 export class AppModule {}

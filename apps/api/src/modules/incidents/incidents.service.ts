@@ -134,9 +134,13 @@ ${JSON.stringify(incident.remediationSteps)}
             : undefined,
       });
 
-    this.incidentsGateway.emitJobProgress(jobId ?? '', 'AI_ANALYSIS_COMPLETED', {
-      incidentId: analyzeDto.incidentId,
-    });
+    this.incidentsGateway.emitJobProgress(
+      jobId ?? '',
+      'AI_ANALYSIS_COMPLETED',
+      {
+        incidentId: analyzeDto.incidentId,
+      },
+    );
     await this.timelineService.logEvent({
       jobId: jobId ?? '',
       stage: 'AI_ANALYSIS_COMPLETED',

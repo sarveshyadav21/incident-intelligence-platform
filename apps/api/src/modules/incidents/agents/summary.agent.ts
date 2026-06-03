@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { LLMService } from '../../../infrastructure/llm/llm.service';
 import { IncidentsGateway } from '../../../infrastructure/websocket/incidents.gateway';
-
+import { AGENT_MODELS } from '../../../config/agent-models.config';
 type StreamContext = {
   incidentId: string;
   jobId: string;
@@ -35,7 +35,10 @@ ${logs}
 `;
   }
 
-  async generateSummary(logs: string, streamContext?: StreamContext): Promise<string> {
+  async generateSummary(
+    logs: string,
+    streamContext?: StreamContext,
+  ): Promise<string> {
     const prompt = this.buildPrompt(logs);
 
     if (streamContext) {
@@ -49,6 +52,7 @@ ${logs}
             token,
           );
         },
+        AGENT_MODELS.summary,
       );
 
       this.incidentsGateway.emitAgentComplete(
@@ -61,7 +65,10 @@ ${logs}
       return summary;
     }
 
-    const response = await this.llmService.generateTextCompletion(prompt);
+    const response = await this.llmService.generateTextCompletion(
+      prompt,
+      AGENT_MODELS.summary,
+    );
 
     return response.trim();
   }
