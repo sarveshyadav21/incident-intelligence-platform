@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { AGENT_MODELS } from '../../../config/agent-models.config';
 import { LLMService } from '../../../infrastructure/llm/llm.service';
 import {
   incidentEvidenceListSchema,
@@ -38,6 +39,7 @@ ${logs}
     return this.llmService.generateJsonCompletion(
       prompt,
       incidentEvidenceListSchema,
+      AGENT_MODELS.evidenceExtraction,
     );
   }
 }

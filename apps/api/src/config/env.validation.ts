@@ -14,6 +14,10 @@ const envSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
 
   ANTHROPIC_API_KEY: z.string().optional(),
+
+  LLM_TIMEOUT_MS: z.coerce.number().default(300_000),
+
+  WEB_ORIGIN: z.string().default('http://localhost:3000'),
 });
 
 export type EnvironmentVariables = z.infer<typeof envSchema>;

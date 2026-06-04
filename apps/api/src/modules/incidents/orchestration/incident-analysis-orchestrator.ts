@@ -20,6 +20,7 @@ import { IncidentEvidence } from '../types/evidence.type';
 import { SituationJudgment } from '../types/situation-judgment.type';
 import { IncidentInputProfile } from '../types/input-profile.type';
 import { IncidentsGateway } from '../../../infrastructure/websocket/incidents.gateway';
+
 export type OrchestratedIncidentAnalysis = {
   analysis: IncidentAnalysis;
   review: EvidenceReview;
@@ -32,6 +33,7 @@ export type OrchestratedIncidentAnalysis = {
 @Injectable()
 export class IncidentAnalysisOrchestrator {
   private readonly logger = new Logger(IncidentAnalysisOrchestrator.name);
+
   constructor(
     private readonly severityAgent: SeverityAgent,
     private readonly rcaAgent: RCAAgent,
@@ -60,101 +62,50 @@ export class IncidentAnalysisOrchestrator {
       ? `${input.logs}\n\n--- Human corrections ---\n${input.humanFeedbackContext}`
       : input.logs;
 
-    const evidence =
-      await this.evidenceExtractionAgent.extractEvidence(enrichedLogs);
+    const incidentId = input.streamContext?.incidentId ?? 'unknown';
 
-    const summaryPromise = this.summaryAgent.generateSummary(
-      enrichedLogs,
-      input.streamContext,
-    );
+    // Phase 1 — lightweight parallel agents
+    this.logger.log('Phase 1: Lightweight parallel agents');
 
-    this.logger.log('Running Lightweight Parallel Agents');
-    this.emitAgentStarted(
-      input.streamContext?.incidentId ?? 'unknown',
-      'severity',
-    );
+    const [severity, aiSummary, affectedServices, detectionSource] =
+      await Promise.all([
+        this.runAgent(incidentId, 'severity', () =>
+          this.severityAgent.classifySeverity(enrichedLogs),
+        ),
+        this.runAgent(incidentId, 'summary', () =>
+          this.summaryAgent.generateSummary(enrichedLogs, input.streamContext),
+        ),
+        this.runAgent(incidentId, 'affectedServices', () =>
+          this.affectedServicesAgent.identifyAffectedServices(enrichedLogs),
+        ),
+        this.runAgent(incidentId, 'detectionSource', () =>
+          this.detectionSourceAgent.identifyDetectionSource(enrichedLogs),
+        ),
+      ]);
 
-    const severityStart = Date.now();
+    // Phase 2 — medium parallel agents
+    this.logger.log('Phase 2: Medium parallel agents');
 
-    const severityPromise = this.severityAgent.classifySeverity(enrichedLogs);
-
-    const summaryAgentPromise = summaryPromise;
-
-    const detectionSourcePromise =
-      this.detectionSourceAgent.identifyDetectionSource(enrichedLogs);
-
-    const affectedServicesPromise =
-      this.affectedServicesAgent.identifyAffectedServices(enrichedLogs);
-
-    let severity;
-    try {
-      severity = await severityPromise;
-
-      this.emitAgentCompleted(
-        input.streamContext?.incidentId ?? 'unknown',
-        'severity',
-        Date.now() - severityStart,
-      );
-    } catch (error) {
-      this.emitAgentFailed(
-        input.streamContext?.incidentId ?? 'unknown',
-        'severity',
-        error,
-      );
-
-      throw error;
-    }
-
-    this.logger.log('Severity completed');
-
-    const aiSummary = await summaryAgentPromise;
-
-    this.logger.log('Summary completed');
-
-    const detectionSource = await detectionSourcePromise;
-
-    this.logger.log('Detection source completed');
-
-    const affectedServices = await affectedServicesPromise;
-
-    this.logger.log('Affected services completed');
-
-    this.logger.log('Lightweight Parallel Agents Completed');
-
-    this.logger.log('Running RCA Agent');
-
-    const rootCause = await this.rcaAgent.analyzeRootCause(
-      enrichedLogs,
-      input.historicalContext,
-    );
-
-    this.logger.log('RCA Agent Completed');
-
-    this.logger.log('Running Medium Parallel Agents');
-
-    const [remediationSteps, impactAssessment, confidence] = await Promise.all([
-      this.remediationAgent.generateRemediationSteps(enrichedLogs),
-
-      this.impactAssessmentAgent.assessImpact(enrichedLogs),
-
-      this.confidenceAgent.scoreConfidence({
-        logs: enrichedLogs,
-        analysis: {
-          severity,
-          aiSummary,
-          rootCause,
-          affectedServices,
-          detectionSource,
-          remediationSteps: [],
-          impactAssessment: '',
-        },
-        similarIncidentCount: input.similarIncidentCount,
-        averageSimilarity: this.calculateAverage(input.similarityScores),
-        evidence,
-      }),
+    const [evidence, impactAssessment] = await Promise.all([
+      this.runAgent(incidentId, 'evidenceExtraction', () =>
+        this.evidenceExtractionAgent.extractEvidence(enrichedLogs),
+      ),
+      this.runAgent(incidentId, 'impactAssessment', () =>
+        this.impactAssessmentAgent.assessImpact(enrichedLogs),
+      ),
     ]);
 
-    this.logger.log('Medium Parallel Agents Completed');
+    // Phase 3 — heavy sequential agents
+    this.logger.log('Phase 3: Heavy sequential agents');
+
+    const rootCause = await this.runAgent(incidentId, 'rca', () =>
+      this.rcaAgent.analyzeRootCause(enrichedLogs, input.historicalContext),
+    );
+
+    const remediationSteps = await this.runAgent(incidentId, 'remediation', () =>
+      this.remediationAgent.generateRemediationSteps(enrichedLogs),
+    );
+
     const analysisWithoutConfidence = {
       severity,
       aiSummary,
@@ -165,23 +116,40 @@ export class IncidentAnalysisOrchestrator {
       detectionSource,
     };
 
+    const confidence = await this.runAgent(incidentId, 'confidence', () =>
+      this.confidenceAgent.scoreConfidence({
+        logs: enrichedLogs,
+        analysis: analysisWithoutConfidence,
+        similarIncidentCount: input.similarIncidentCount,
+        averageSimilarity: this.calculateAverage(input.similarityScores),
+        evidence,
+      }),
+    );
+
     const initialAnalysis = incidentAnalysisSchema.parse({
       ...analysisWithoutConfidence,
       confidenceScore: confidence.confidenceScore,
     });
 
-    const situationJudgment = await this.situationJudgeAgent.judgeSituation({
-      logs: enrichedLogs,
-      analysis: initialAnalysis,
-      evidence,
-    });
+    const situationJudgment = await this.runAgent(
+      incidentId,
+      'situationJudge',
+      () =>
+        this.situationJudgeAgent.judgeSituation({
+          logs: enrichedLogs,
+          analysis: initialAnalysis,
+          evidence,
+        }),
+    );
 
-    const review = await this.evidenceReviewAgent.reviewAnalysis({
-      logs: enrichedLogs,
-      analysis: initialAnalysis,
-      evidence,
-      situationJudgment,
-    });
+    const review = await this.runAgent(incidentId, 'evidenceReview', () =>
+      this.evidenceReviewAgent.reviewAnalysis({
+        logs: enrichedLogs,
+        analysis: initialAnalysis,
+        evidence,
+        situationJudgment,
+      }),
+    );
 
     const adjustedConfidence = this.clampConfidence(
       initialAnalysis.confidenceScore + review.confidenceAdjustment,
@@ -191,7 +159,9 @@ export class IncidentAnalysisOrchestrator {
       ...initialAnalysis,
       confidenceScore: adjustedConfidence,
     });
+
     this.logger.log('Incident analysis orchestration completed');
+
     return {
       analysis: finalAnalysis,
       review,
@@ -200,6 +170,24 @@ export class IncidentAnalysisOrchestrator {
       confidenceRationale: confidence.rationale,
       inputProfile: input.inputProfile,
     };
+  }
+
+  private async runAgent<T>(
+    incidentId: string,
+    agent: string,
+    task: () => Promise<T>,
+  ): Promise<T> {
+    this.emitAgentStarted(incidentId, agent);
+    const startedAt = Date.now();
+
+    try {
+      const result = await task();
+      this.emitAgentCompleted(incidentId, agent, Date.now() - startedAt);
+      return result;
+    } catch (error) {
+      this.emitAgentFailed(incidentId, agent, error);
+      throw error;
+    }
   }
 
   private calculateAverage(scores: number[]): number | null {
@@ -216,6 +204,7 @@ export class IncidentAnalysisOrchestrator {
   private clampConfidence(score: number): number {
     return Math.max(0, Math.min(100, Number(score.toFixed(2))));
   }
+
   private emitAgentStarted(incidentId: string, agent: string) {
     this.incidentsGateway.emitAgentLifecycleEvent(incidentId, {
       agent,

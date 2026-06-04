@@ -99,7 +99,7 @@ export type IncidentUpload = {
   mimeType: string;
   storageKey: string;
   parsedText?: string | null;
-  status?: "PENDING" | "PARSED" | "FAILED";
+  status?: "PENDING" | "PARSED" | "FAILED" | "RETRYING";
   createdAt: string;
 };
 
@@ -164,11 +164,27 @@ export type EnqueueAnalysisResponse = {
   incidentId: string;
 };
 
+export type AnalysisJobStatus =
+  | "QUEUED"
+  | "RUNNING"
+  | "COMPLETED"
+  | "FAILED"
+  | "NOT_FOUND"
+  | "RETRYING";
+
 export type JobStatusResponse = {
   jobId: string | undefined;
-  status: string;
+  status: AnalysisJobStatus | string;
+  bullmqState?: string;
   result: (Incident & { aiEvaluation?: AiEvaluation }) | null;
   failedReason: string | null;
+};
+
+export type JobStatusEvent = {
+  jobId: string;
+  incidentId: string | null;
+  status: AnalysisJobStatus;
+  timestamp: string;
 };
 
 export type AnalyzeIncidentResponse = Incident & {

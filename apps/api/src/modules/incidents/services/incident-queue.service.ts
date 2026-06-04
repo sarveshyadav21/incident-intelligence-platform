@@ -17,6 +17,8 @@ import { TimelineService } from '../timeline/incident-timeline.service';
 import { IncidentInputNormalizerService } from './incident-input-normalizer.service';
 import { IncidentUploadService } from './incident-upload.service';
 import { IncidentFeedbackService } from './incident-feedback.service';
+import { IncidentsGateway } from '../../../infrastructure/websocket/incidents.gateway';
+
 @Injectable()
 export class IncidentQueueService {
   constructor(
@@ -27,6 +29,7 @@ export class IncidentQueueService {
     private readonly incidentInputNormalizerService: IncidentInputNormalizerService,
     private readonly incidentUploadService: IncidentUploadService,
     private readonly incidentFeedbackService: IncidentFeedbackService,
+    private readonly incidentsGateway: IncidentsGateway,
   ) {}
   async enqueueIncidentAnalysis(dto: AnalyzeAndStoreIncidentDto) {
     const inputProfile = this.incidentInputNormalizerService.normalize(
@@ -89,6 +92,9 @@ export class IncidentQueueService {
         status: 'QUEUED',
       },
     });
+
+    this.incidentsGateway.emitJobStatus(trackingId, 'QUEUED', incident.id);
+
     return {
       jobId: trackingId,
       incidentId: incident.id,
@@ -161,11 +167,14 @@ export class IncidentQueueService {
       },
     });
 
+    this.incidentsGateway.emitJobStatus(trackingId, 'QUEUED', incidentId);
+
     return {
       jobId: trackingId,
       incidentId,
     };
   }
+
   async getJobStatus(jobId: string): Promise<JobStatusResponse> {
     const mappedJob = await this.prismaService.incidentAnalysisJob.findUnique({
       where: {
@@ -203,11 +212,9 @@ export class IncidentQueueService {
 
     return {
       jobId,
-
-      status: state,
-
+      status: mappedJob.status,
+      bullmqState: state,
       result: (job.returnvalue as unknown) ?? null,
-
       failedReason: job.failedReason ?? null,
     };
   }

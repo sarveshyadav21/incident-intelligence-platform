@@ -25,7 +25,6 @@ export default function IncidentsPage() {
   const { data: incidents, isLoading } = useIncidents();
   const { data: trendData } = useIncidentTrends();
   const liveStages = useAnalysisJobsStore((state) => state.liveStages);
-
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
     null,
   );

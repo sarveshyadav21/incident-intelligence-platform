@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  RequestTimeoutException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ZodSchema } from 'zod';
 
 import { parseJsonResponse } from '../../common/utils/parse-json-response.util';
@@ -7,21 +12,31 @@ type StreamTokenCallback = (token: string) => void;
 
 @Injectable()
 export class LLMService {
+  private readonly defaultTimeoutMs: number;
+
+  constructor(private readonly configService: ConfigService) {
+    const timeout = this.configService.get<number>('LLM_TIMEOUT_MS');
+
+    console.log('LLM_TIMEOUT_MS =', timeout);
+
+    this.defaultTimeoutMs = timeout ?? 300_000;
+  }
+
   async generateTextCompletion(
     prompt: string,
     model = 'llama3:8b',
+    timeoutMs = this.defaultTimeoutMs,
   ): Promise<string> {
-    const response = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    console.log('Model:', model);
+    console.log('Timeout:', timeoutMs);
+    const response = await this.fetchOllama(
+      {
         model,
         prompt,
         stream: false,
-      }),
-    });
+      },
+      timeoutMs,
+    );
 
     if (!response.ok) {
       throw new InternalServerErrorException(
@@ -42,18 +57,16 @@ export class LLMService {
     prompt: string,
     onToken: StreamTokenCallback,
     model = 'llama3:8b',
+    timeoutMs = this.defaultTimeoutMs,
   ): Promise<string> {
-    const response = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    const response = await this.fetchOllama(
+      {
         model,
         prompt,
         stream: true,
-      }),
-    });
+      },
+      timeoutMs,
+    );
 
     if (!response.ok || !response.body) {
       throw new InternalServerErrorException(
@@ -106,8 +119,13 @@ export class LLMService {
     prompt: string,
     schema: ZodSchema<T>,
     model = 'llama3:8b',
+    timeoutMs = this.defaultTimeoutMs,
   ): Promise<T> {
-    const response = await this.generateTextCompletion(prompt, model);
+    const response = await this.generateTextCompletion(
+      prompt,
+      model,
+      timeoutMs,
+    );
 
     try {
       return parseJsonResponse(response, schema);
@@ -123,9 +141,34 @@ Original task:
 ${prompt}
 `,
         model,
+        timeoutMs,
       );
 
       return parseJsonResponse(repairResponse, schema);
+    }
+  }
+
+  private async fetchOllama(
+    body: object,
+    timeoutMs: number,
+  ): Promise<Response> {
+    try {
+      return await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new RequestTimeoutException(
+          `Ollama request timed out after ${timeoutMs}ms`,
+        );
+      }
+
+      throw error;
     }
   }
 }

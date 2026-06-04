@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { validateRcaResponse } from '../../../common/utils/validate-rca.util';
 
+import { AGENT_MODELS } from '../../../config/agent-models.config';
 import { LLMService } from '../../../infrastructure/llm/llm.service';
 
 @Injectable()
@@ -38,7 +39,10 @@ Logs:
 ${logs}
 `;
 
-    const response = await this.llmService.generateTextCompletion(prompt);
+    const response = await this.llmService.generateTextCompletion(
+      prompt,
+      AGENT_MODELS.rca,
+    );
 
     const validatedResponse = validateRcaResponse(logs, response);
 

@@ -54,7 +54,7 @@ export function IncidentsChart() {
         </div>
       </div>
 
-      <div className="h-72">
+      <div className="h-72 min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
             <XAxis dataKey="time" />

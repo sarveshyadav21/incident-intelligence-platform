@@ -6,6 +6,8 @@ import { ExternalLink } from "lucide-react";
 import { SeverityBadge } from "./severity-badge";
 import { IncidentTimeline } from "./incident-timeline";
 import { IncidentAiTrustPanel } from "./incident-ai-trust-panel";
+import { IncidentAgentLifecycle } from "./incident-agent-lifecycle";
+import type { AgentEvent } from "@/types/agent-event";
 import { IncidentUploadPanel } from "./incident-upload-panel";
 import { IncidentFeedbackSection } from "./incident-feedback-section";
 import { extractAiEvaluationFromTimeline } from "../../features/incidents/utils/timeline-metadata";
@@ -18,6 +20,7 @@ type Props = {
   timelineEvents?: IncidentDetail["timelineEvents"];
   timelineLoading?: boolean;
   liveStage?: string;
+  agentEvents?: AgentEvent[];
   showWorkspaceLink?: boolean;
 };
 
@@ -26,6 +29,7 @@ export function IncidentDetailContent({
   timelineEvents,
   timelineLoading,
   liveStage,
+  agentEvents = [],
   showWorkspaceLink = true,
 }: Props) {
   const events = timelineEvents ?? incident.timelineEvents ?? [];
@@ -172,6 +176,10 @@ export function IncidentDetailContent({
           aiInsights={aiInsights}
           hypotheses={incident.hypotheses}
         />
+      </Section>
+
+      <Section title="AI agent lifecycle" accent="violet">
+        <IncidentAgentLifecycle events={agentEvents} />
       </Section>
 
       <Section title="Analysis pipeline timeline">

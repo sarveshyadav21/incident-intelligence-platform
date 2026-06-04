@@ -74,9 +74,6 @@ export function IncidentCard({ incident, liveStage }: Props) {
 
         <div className="flex shrink-0 flex-col items-end gap-2">
           <SeverityBadge severity={incident.severity} />
-          {incident.aiSeverity && incident.aiSeverity !== incident.severity && (
-            <SeverityBadge severity={incident.aiSeverity} />
-          )}
         </div>
       </div>
 

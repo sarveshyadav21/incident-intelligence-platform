@@ -7,7 +7,7 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis,
+  YAxis, 
   Brush,
 } from "recharts";
 import { useState } from "react";
@@ -72,7 +72,7 @@ export function IncidentTrendsChart({ data, timeFormat }: Props) {
         </p>
       </div>
 
-      <div className="h-80">
+      <div className="h-80 min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={(data ?? []).slice(visibleRange.start, visibleRange.end + 1)}

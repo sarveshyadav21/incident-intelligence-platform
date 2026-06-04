@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { AGENT_MODELS } from '../../../config/agent-models.config';
 import { LLMService } from '../../../infrastructure/llm/llm.service';
 
 import {
@@ -39,6 +40,7 @@ ${logs}
     return this.llmService.generateJsonCompletion<RemediationSteps>(
       prompt,
       remediationStepsSchema,
+      AGENT_MODELS.remediation,
     );
   }
 }

@@ -1,17 +1,25 @@
 import { create } from "zustand";
 
+import type { AgentEvent } from "../../../types/agent-event";
+import type { AnalysisJobStatus } from "../types/incident.type";
+
 type AnalysisJobsState = {
   jobToIncident: Record<string, string>;
   incidentToJob: Record<string, string>;
   liveStages: Record<string, string>;
+  jobStatuses: Record<string, AnalysisJobStatus>;
   activityFeed: string[];
   streamingSummaries: Record<string, string>;
+  agentLifecycleByIncident: Record<string, AgentEvent[]>;
   registerJob: (jobId: string, incidentId: string) => void;
   setLiveStage: (incidentId: string, stage: string) => void;
+  setJobStatus: (jobId: string, status: AnalysisJobStatus) => void;
   pushActivity: (message: string) => void;
   appendStreamToken: (incidentId: string, agent: string, token: string) => void;
   setStreamComplete: (incidentId: string, agent: string, content: string) => void;
+  pushAgentLifecycle: (incidentId: string, event: AgentEvent) => void;
   clearStream: (incidentId: string) => void;
+  clearAgentLifecycle: (incidentId: string) => void;
   clearJob: (jobId: string) => void;
 };
 
@@ -19,8 +27,10 @@ export const useAnalysisJobsStore = create<AnalysisJobsState>((set) => ({
   jobToIncident: {},
   incidentToJob: {},
   liveStages: {},
+  jobStatuses: {},
   activityFeed: [],
   streamingSummaries: {},
+  agentLifecycleByIncident: {},
 
   registerJob: (jobId, incidentId) =>
     set((state) => ({
@@ -31,6 +41,11 @@ export const useAnalysisJobsStore = create<AnalysisJobsState>((set) => ({
   setLiveStage: (incidentId, stage) =>
     set((state) => ({
       liveStages: { ...state.liveStages, [incidentId]: stage },
+    })),
+
+  setJobStatus: (jobId, status) =>
+    set((state) => ({
+      jobStatuses: { ...state.jobStatuses, [jobId]: status },
     })),
 
   pushActivity: (message) =>
@@ -57,6 +72,19 @@ export const useAnalysisJobsStore = create<AnalysisJobsState>((set) => ({
       },
     })),
 
+  pushAgentLifecycle: (incidentId, event) =>
+    set((state) => {
+      const existing = state.agentLifecycleByIncident[incidentId] ?? [];
+      const updated = [...existing, event].slice(-20);
+
+      return {
+        agentLifecycleByIncident: {
+          ...state.agentLifecycleByIncident,
+          [incidentId]: updated,
+        },
+      };
+    }),
+
   clearStream: (incidentId) =>
     set((state) => {
       const streamingSummaries = { ...state.streamingSummaries };
@@ -66,6 +94,13 @@ export const useAnalysisJobsStore = create<AnalysisJobsState>((set) => ({
         }
       });
       return { streamingSummaries };
+    }),
+
+  clearAgentLifecycle: (incidentId) =>
+    set((state) => {
+      const { [incidentId]: _removed, ...agentLifecycleByIncident } =
+        state.agentLifecycleByIncident;
+      return { agentLifecycleByIncident };
     }),
 
   clearJob: (jobId) =>
