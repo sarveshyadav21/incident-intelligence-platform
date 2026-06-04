@@ -5,7 +5,9 @@ import { IncidentQueueService } from '../../incidents/services/incident-queue.se
 import { mapDatadogToIncident } from './datadog.mapper';
 
 import { DatadogWebhookDto } from './dto/datadog-webhook.dto';
+import { Public } from '../../../lib/auth/public.decorator';
 
+@Public()
 @Controller('webhooks/datadog')
 export class DatadogController {
   private readonly logger = new Logger(DatadogController.name);

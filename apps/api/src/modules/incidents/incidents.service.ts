@@ -12,6 +12,7 @@ import { IncidentInputNormalizerService } from './services/incident-input-normal
 import { AnalysisRunService } from './services/analysis-run.service';
 import { IncidentReportingService } from './services/incident-reporting.service';
 import { AuditLogService } from './services/audit-log.service';
+import { IncidentAccessService } from './services/incident-access.service';
 
 @Injectable()
 export class IncidentsService {
@@ -26,11 +27,13 @@ export class IncidentsService {
     private readonly analysisRunService: AnalysisRunService,
     private readonly incidentReportingService: IncidentReportingService,
     private readonly auditLogService: AuditLogService,
+    private readonly incidentAccessService: IncidentAccessService,
   ) {}
 
-  async createIncident(createIncidentDto: CreateIncidentDto) {
+  async createIncident(createIncidentDto: CreateIncidentDto, userId: string) {
     const incident = await this.prismaService.incident.create({
       data: {
+        userId,
         title: createIncidentDto.title,
         severity: createIncidentDto.severity,
         source: createIncidentDto.source,
@@ -49,8 +52,9 @@ export class IncidentsService {
     return incident;
   }
 
-  async getAllIncidents() {
+  async getAllIncidents(userId: string) {
     return this.prismaService.incident.findMany({
+      where: { userId },
       orderBy: {
         createdAt: 'desc',
       },
@@ -89,11 +93,19 @@ export class IncidentsService {
       incidentId: analyzeDto.incidentId,
     });
 
+    const incidentOwner = analyzeDto.incidentId
+      ? await this.prismaService.incident.findUnique({
+          where: { id: analyzeDto.incidentId },
+          select: { userId: true },
+        })
+      : null;
+
     const similarIncidents =
       await this.similaritySearchService.findSimilarIncidents(
         embedding,
         analyzeDto.incidentId,
         5,
+        incidentOwner?.userId ?? undefined,
       );
 
     const filteredIncidents = similarIncidents.filter(
@@ -295,11 +307,22 @@ ${JSON.stringify(incident.remediationSteps)}
     };
   }
 
-  async getIncidentTimeline(jobId: string) {
+  async getIncidentTimeline(jobId: string, userId: string) {
+    const mappedJob = await this.prismaService.incidentAnalysisJob.findUnique({
+      where: { trackingId: jobId },
+      select: { incidentId: true },
+    });
+
+    if (mappedJob?.incidentId) {
+      await this.incidentAccessService.assertOwner(mappedJob.incidentId, userId);
+    }
+
     return this.timelineService.getTimelineByJobId(jobId);
   }
 
-  async getRetryHistory(incidentId: string) {
+  async getRetryHistory(incidentId: string, userId: string) {
+    await this.incidentAccessService.assertOwner(incidentId, userId);
+
     const events = await this.prismaService.incidentTimelineEvent.findMany({
       where: {
         incidentId,
@@ -316,7 +339,9 @@ ${JSON.stringify(incident.remediationSteps)}
     }));
   }
 
-  async getIncidentById(id: string) {
+  async getIncidentById(id: string, userId: string) {
+    await this.incidentAccessService.assertOwner(id, userId);
+
     const incident = await this.prismaService.incident.findUnique({
       where: { id },
       include: {

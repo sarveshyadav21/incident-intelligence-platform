@@ -6,8 +6,9 @@ import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 export class IncidentsAnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getIncidentTrends() {
+  async getIncidentTrends(userId: string) {
     const incidents = await this.prisma.incident.findMany({
+      where: { userId },
       orderBy: {
         createdAt: 'asc',
       },

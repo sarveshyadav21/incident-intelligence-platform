@@ -31,13 +31,17 @@ export class IncidentQueueService {
     private readonly incidentFeedbackService: IncidentFeedbackService,
     private readonly incidentsGateway: IncidentsGateway,
   ) {}
-  async enqueueIncidentAnalysis(dto: AnalyzeAndStoreIncidentDto) {
+  async enqueueIncidentAnalysis(
+    dto: AnalyzeAndStoreIncidentDto,
+    userId?: string,
+  ) {
     const inputProfile = this.incidentInputNormalizerService.normalize(
       dto.logs,
     );
 
     const incident = await this.prismaService.incident.create({
       data: {
+        userId: userId ?? null,
         title: dto.title,
 
         severity: dto.severity,
@@ -100,12 +104,16 @@ export class IncidentQueueService {
     };
   }
 
-  async reanalyzeIncident(incidentId: string) {
+  async reanalyzeIncident(incidentId: string, userId: string) {
     const incident = await this.prismaService.incident.findUnique({
       where: { id: incidentId },
     });
 
     if (!incident) {
+      throw new NotFoundException('Incident not found');
+    }
+
+    if (incident.userId !== userId) {
       throw new NotFoundException('Incident not found');
     }
 
@@ -175,10 +183,16 @@ export class IncidentQueueService {
     };
   }
 
-  async getJobStatus(jobId: string): Promise<JobStatusResponse> {
+  async getJobStatus(
+    jobId: string,
+    userId: string,
+  ): Promise<JobStatusResponse> {
     const mappedJob = await this.prismaService.incidentAnalysisJob.findUnique({
       where: {
         trackingId: jobId,
+      },
+      include: {
+        incident: { select: { userId: true } },
       },
     });
 
@@ -190,6 +204,15 @@ export class IncidentQueueService {
 
         result: null,
 
+        failedReason: null,
+      };
+    }
+
+    if (mappedJob.incident?.userId && mappedJob.incident.userId !== userId) {
+      return {
+        jobId,
+        status: 'NOT_FOUND',
+        result: null,
         failedReason: null,
       };
     }

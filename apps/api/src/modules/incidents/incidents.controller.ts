@@ -11,6 +11,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 
+import { CurrentUser } from '../../lib/auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/types/auth-user.type';
 import { AnalyzeIncidentDto } from './dto/analyze-incident.dto';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { IncidentsService } from './incidents.service';
@@ -29,6 +31,7 @@ import { PromptVersionService } from './services/prompt-version.service';
 import { AuditLogService } from './services/audit-log.service';
 import { IncidentReportingService } from './services/incident-reporting.service';
 import { CreateRatingFeedbackDto } from './dto/create-rating-feedback.dto';
+import { IncidentAccessService } from './services/incident-access.service';
 
 @Controller('incidents')
 export class IncidentsController {
@@ -46,16 +49,20 @@ export class IncidentsController {
     private readonly promptVersionService: PromptVersionService,
     private readonly auditLogService: AuditLogService,
     private readonly incidentReportingService: IncidentReportingService,
+    private readonly incidentAccessService: IncidentAccessService,
   ) {}
 
   @Post()
-  async createIncident(@Body() createIncidentDto: CreateIncidentDto) {
-    return this.incidentsService.createIncident(createIncidentDto);
+  async createIncident(
+    @Body() createIncidentDto: CreateIncidentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.incidentsService.createIncident(createIncidentDto, user.id);
   }
 
   @Get()
-  async getAllIncidents() {
-    return this.incidentsService.getAllIncidents();
+  async getAllIncidents(@CurrentUser() user: AuthenticatedUser) {
+    return this.incidentsService.getAllIncidents(user.id);
   }
 
   @Get('admin/queue')
@@ -95,25 +102,34 @@ export class IncidentsController {
 
   @Post('analyze-and-store')
   async analyzeAndStoreIncident(
-    @Body()
-    analyzeDto: AnalyzeAndStoreIncidentDto,
+    @Body() analyzeDto: AnalyzeAndStoreIncidentDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.incidentQueueService.enqueueIncidentAnalysis(analyzeDto);
+    return this.incidentQueueService.enqueueIncidentAnalysis(
+      analyzeDto,
+      user.id,
+    );
   }
 
   @Get('job/:jobId')
-  async getJobStatus(@Param('jobId') jobId: string) {
-    return this.incidentQueueService.getJobStatus(jobId);
+  async getJobStatus(
+    @Param('jobId') jobId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.incidentQueueService.getJobStatus(jobId, user.id);
   }
 
   @Get('timeline/:jobId')
-  async getTimeline(@Param('jobId') jobId: string) {
-    return this.incidentsService.getIncidentTimeline(jobId);
+  async getTimeline(
+    @Param('jobId') jobId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.incidentsService.getIncidentTimeline(jobId, user.id);
   }
 
   @Get('analytics/trends')
-  getIncidentTrends() {
-    return this.incidentsAnalyticsService.getIncidentTrends();
+  getIncidentTrends(@CurrentUser() user: AuthenticatedUser) {
+    return this.incidentsAnalyticsService.getIncidentTrends(user.id);
   }
 
   @Post(':id/uploads')
@@ -126,20 +142,27 @@ export class IncidentsController {
   uploadFile(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.incidentUploadService.uploadFile(id, file);
+    return this.incidentUploadService.uploadFile(id, file, user.id);
   }
 
   @Get(':id/uploads')
-  listUploads(@Param('id') id: string) {
+  async listUploads(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.incidentUploadService.listUploads(id);
   }
 
   @Delete(':id/uploads/:uploadId')
-  deleteUpload(
+  async deleteUpload(
     @Param('id') id: string,
     @Param('uploadId') uploadId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.incidentUploadService.deleteUpload(id, uploadId);
   }
 
@@ -147,73 +170,113 @@ export class IncidentsController {
   createFeedback(
     @Param('id') id: string,
     @Body() dto: CreateFeedbackDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.incidentFeedbackService.createFeedback(id, dto);
+    return this.incidentFeedbackService.createFeedback(id, dto, user.id);
   }
 
   @Post(':id/feedback/rating')
   createRatingFeedback(
     @Param('id') id: string,
     @Body() dto: CreateRatingFeedbackDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.incidentFeedbackService.createRatingFeedback(id, dto);
+    return this.incidentFeedbackService.createRatingFeedback(id, dto, user.id);
   }
 
   @Get(':id/feedback')
-  listFeedback(@Param('id') id: string) {
+  async listFeedback(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.incidentFeedbackService.listFeedback(id);
   }
 
   @Post(':id/reanalyze')
-  reanalyzeIncident(@Param('id') id: string) {
-    return this.incidentQueueService.reanalyzeIncident(id);
+  reanalyzeIncident(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.incidentQueueService.reanalyzeIncident(id, user.id);
   }
 
   @Get(':id/similar')
-  getSimilarIncidents(@Param('id') id: string) {
-    return this.similaritySearchService.findSimilarForIncident(id);
+  getSimilarIncidents(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.similaritySearchService.findSimilarForIncident(id, user.id);
   }
 
   @Get(':id/analysis-runs')
-  listAnalysisRuns(@Param('id') id: string) {
+  async listAnalysisRuns(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.analysisRunService.listRuns(id);
   }
 
   @Get(':id/analysis-runs/:runId')
-  getAnalysisRun(
+  async getAnalysisRun(
     @Param('id') id: string,
     @Param('runId') runId: string,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.analysisRunService.getRun(id, runId);
   }
 
   @Get(':id/retry-history')
-  getRetryHistory(@Param('id') id: string) {
-    return this.incidentsService.getRetryHistory(id);
+  getRetryHistory(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.incidentsService.getRetryHistory(id, user.id);
   }
 
   @Get(':id/executive-summary')
-  getExecutiveSummary(@Param('id') id: string) {
+  async getExecutiveSummary(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.incidentReportingService.getExecutiveSummary(id);
   }
 
   @Get(':id/postmortem')
-  getPostmortem(@Param('id') id: string) {
+  async getPostmortem(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.incidentReportingService.getPostmortem(id);
   }
 
   @Get(':id/dependency-graph')
-  getDependencyGraph(@Param('id') id: string) {
+  async getDependencyGraph(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.incidentReportingService.getDependencyGraph(id);
   }
 
   @Get(':id/audit-logs')
-  getAuditLogs(@Param('id') id: string) {
+  async getAuditLogs(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.incidentAccessService.assertOwner(id, user.id);
     return this.auditLogService.listForIncident(id);
   }
 
   @Get(':id')
-  async getIncidentById(@Param('id') id: string) {
-    return this.incidentsService.getIncidentById(id);
+  async getIncidentById(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.incidentsService.getIncidentById(id, user.id);
   }
 }

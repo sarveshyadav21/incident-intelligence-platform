@@ -8,6 +8,7 @@ import { join } from 'path';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { FileParserService } from './file-parser.service';
+import { IncidentAccessService } from './incident-access.service';
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads');
 
@@ -16,16 +17,15 @@ export class IncidentUploadService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly fileParserService: FileParserService,
+    private readonly incidentAccessService: IncidentAccessService,
   ) {}
 
-  async uploadFile(incidentId: string, file: Express.Multer.File) {
-    const incident = await this.prismaService.incident.findUnique({
-      where: { id: incidentId },
-    });
-
-    if (!incident) {
-      throw new NotFoundException('Incident not found');
-    }
+  async uploadFile(
+    incidentId: string,
+    file: Express.Multer.File,
+    userId: string,
+  ) {
+    await this.incidentAccessService.assertOwner(incidentId, userId);
 
     if (!file?.buffer && !file?.path) {
       throw new BadRequestException('No file provided');

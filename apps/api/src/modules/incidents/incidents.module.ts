@@ -36,6 +36,7 @@ import { ExecutiveSummaryAgent } from './agents/executive-summary.agent';
 import { PostmortemAgent } from './agents/postmortem.agent';
 import { DependencyGraphAgent } from './agents/dependency-graph.agent';
 import { IncidentReportingService } from './services/incident-reporting.service';
+import { IncidentAccessService } from './services/incident-access.service';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { IncidentReportingService } from './services/incident-reporting.service'
     AdminQueueService,
     JobRecoveryService,
     IncidentReportingService,
+    IncidentAccessService,
   ],
   exports: [IncidentQueueService],
 })

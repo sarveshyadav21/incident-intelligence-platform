@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
+import { IncidentAccessService } from './incident-access.service';
 
 type SimilarIncident = {
   id: string;
@@ -13,14 +14,19 @@ type SimilarIncident = {
 
 @Injectable()
 export class SimilaritySearchService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly incidentAccessService: IncidentAccessService,
+  ) {}
 
   async findSimilarIncidents(
     embedding: number[],
     excludeIncidentId?: string,
     limit = 5,
+    userId?: string,
   ): Promise<SimilarIncident[]> {
     const vector = `[${embedding.join(',')}]`;
+    const userFilter = userId ?? null;
 
     if (excludeIncidentId) {
       return this.prismaService.$queryRawUnsafe<SimilarIncident[]>(
@@ -35,12 +41,14 @@ export class SimilaritySearchService {
         FROM incidents
         WHERE embedding IS NOT NULL
           AND id != $2
+          AND ($4::text IS NULL OR "userId" = $4)
         ORDER BY embedding <=> $1::vector
         LIMIT $3
         `,
         vector,
         excludeIncidentId,
         limit,
+        userFilter,
       );
     }
 
@@ -55,15 +63,19 @@ export class SimilaritySearchService {
         1 - (embedding <=> $1::vector) AS similarity
       FROM incidents
       WHERE embedding IS NOT NULL
+        AND ($3::text IS NULL OR "userId" = $3)
       ORDER BY embedding <=> $1::vector
       LIMIT $2
       `,
       vector,
       limit,
+      userFilter,
     );
   }
 
-  async findSimilarForIncident(incidentId: string) {
+  async findSimilarForIncident(incidentId: string, userId: string) {
+    await this.incidentAccessService.assertOwner(incidentId, userId);
+
     const rows = await this.prismaService.$queryRawUnsafe<
       Array<{ embedding: string }>
     >(
@@ -77,7 +89,12 @@ export class SimilaritySearchService {
 
     const embedding = this.parseVector(rows[0].embedding);
 
-    const similar = await this.findSimilarIncidents(embedding, incidentId, 8);
+    const similar = await this.findSimilarIncidents(
+      embedding,
+      incidentId,
+      8,
+      userId,
+    );
 
     return similar.map((incident) => ({
       id: incident.id,

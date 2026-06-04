@@ -7,8 +7,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  firstName    String
+  lastName     String?
+  passwordHash String?
+  provider     AuthProvider @default(EMAIL)
+  googleId     String?      @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  sessions  Session[]
+  incidents Incident[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
 model Incident {
   id       String           @id @default(cuid())
+  userId   String?
   title    String
   status   IncidentStatus   @default(PENDING)
   severity IncidentSeverity
@@ -42,7 +73,9 @@ model Incident {
   postmortems        Postmortem[]
   dependencyGraphs   DependencyGraph[]
   auditLogs          AuditLog[]
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([userId])
   @@map("incidents")
 }
 
@@ -343,6 +376,12 @@ model TeamMember {
 
   @@unique([teamId, email])
   @@map("team_members")
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  GUEST
 }
 
 enum UserRole {

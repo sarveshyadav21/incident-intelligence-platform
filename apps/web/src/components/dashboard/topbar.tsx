@@ -6,9 +6,19 @@ import Link from "next/link";
 import { Search, Bell, Command, Circle, ChevronDown, Sparkles } from "lucide-react";
 import { useSocket } from "../../providers/socket-provider";
 import { PORTFOLIO_CONNECT_LABEL, PORTFOLIO_URL } from "../../lib/portfolio";
+import { useAuth } from "../../providers/auth-provider";
 
 export function Topbar() {
   const { isConnected } = useSocket();
+  const { user, logout } = useAuth();
+  const initials = user
+    ? `${user.firstName.charAt(0)}${user.lastName?.charAt(0) ?? ""}`.toUpperCase()
+    : "U";
+  const displayName = user
+    ? user.isGuest
+      ? "Guest"
+      : `${user.firstName} ${user.lastName ?? ""}`.trim()
+    : "User";
   return (
     <header
       className="
@@ -133,10 +143,9 @@ export function Topbar() {
             />
           </button>
 
-          <motion.a
-            href={PORTFOLIO_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <motion.button
+            type="button"
+            onClick={() => void logout()}
             whileHover={{
               scale: 1.02,
             }}
@@ -161,30 +170,18 @@ export function Topbar() {
                 text-violet-400
               "
             >
-              SY
+              {initials}
             </div>
 
             <div className="hidden text-left md:block">
-              <p
-                className="
-                  text-sm font-medium
-                  text-white
-                "
-              >
-                Sarvesh
-              </p>
-
-              <p
-                className="
-                  text-xs text-zinc-400
-                "
-              >
-                AI Engineer
+              <p className="text-sm font-medium text-white">{displayName}</p>
+              <p className="text-xs text-zinc-400">
+                {user?.isGuest ? "Guest session" : user?.email ?? "Signed in"}
               </p>
             </div>
 
             <ChevronDown size={16} className="text-zinc-500" />
-          </motion.a>
+          </motion.button>
         </div>
       </div>
     </header>

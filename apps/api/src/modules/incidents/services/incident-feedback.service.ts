@@ -5,22 +5,22 @@ import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 import { CreateFeedbackDto } from '../dto/create-feedback.dto';
 import { CreateRatingFeedbackDto } from '../dto/create-rating-feedback.dto';
 import { AuditLogService } from './audit-log.service';
+import { IncidentAccessService } from './incident-access.service';
 
 @Injectable()
 export class IncidentFeedbackService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly incidentAccessService: IncidentAccessService,
   ) {}
 
-  async createFeedback(incidentId: string, dto: CreateFeedbackDto) {
-    const incident = await this.prismaService.incident.findUnique({
-      where: { id: incidentId },
-    });
-
-    if (!incident) {
-      throw new NotFoundException('Incident not found');
-    }
+  async createFeedback(
+    incidentId: string,
+    dto: CreateFeedbackDto,
+    userId: string,
+  ) {
+    await this.incidentAccessService.assertOwner(incidentId, userId);
 
     const feedback = await this.prismaService.incidentFeedback.create({
       data: {
@@ -48,14 +48,12 @@ export class IncidentFeedbackService {
     return feedback;
   }
 
-  async createRatingFeedback(incidentId: string, dto: CreateRatingFeedbackDto) {
-    const incident = await this.prismaService.incident.findUnique({
-      where: { id: incidentId },
-    });
-
-    if (!incident) {
-      throw new NotFoundException('Incident not found');
-    }
+  async createRatingFeedback(
+    incidentId: string,
+    dto: CreateRatingFeedbackDto,
+    userId: string,
+  ) {
+    await this.incidentAccessService.assertOwner(incidentId, userId);
 
     const feedback = await this.prismaService.incidentFeedback.create({
       data: {

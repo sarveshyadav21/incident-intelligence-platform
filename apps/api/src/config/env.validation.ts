@@ -18,6 +18,10 @@ const envSchema = z.object({
   LLM_TIMEOUT_MS: z.coerce.number().default(300_000),
 
   WEB_ORIGIN: z.string().default('http://localhost:3000'),
+
+  GOOGLE_CLIENT_ID: z.string().optional(),
+
+  SESSION_TTL_DAYS: z.coerce.number().default(7),
 });
 
 export type EnvironmentVariables = z.infer<typeof envSchema>;
