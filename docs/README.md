@@ -2,7 +2,8 @@
 
 | Document | Description |
 |----------|-------------|
-| [AGENT-HANDOFF.md](./AGENT-HANDOFF.md) | **Primary handoff doc** — architecture, every folder/file, API, gaps, fix instructions |
+| [PROJECT-PROGRESS.md](./PROJECT-PROGRESS.md) | **Latest architecture & progress** — stack, phases, WebSocket, fixes, remaining work |
+| [AGENT-HANDOFF.md](./AGENT-HANDOFF.md) | **Coding agent onboarding** — every folder/file, API, gaps, fix instructions |
 
 ## Quick start
 

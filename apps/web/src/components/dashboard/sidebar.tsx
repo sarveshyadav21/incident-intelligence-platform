@@ -17,6 +17,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import { ConnectWithMe } from "./connect-with-me";
+import { ThemeToggle } from "../theme/theme-toggle";
+
 const navItems = [
   {
     label: "Dashboard",
@@ -37,6 +40,11 @@ const navItems = [
   {
     label: "Analytics",
     href: "/analytics",
+    icon: BarChart3,
+  },
+  {
+    label: "Operations",
+    href: "/admin",
     icon: BarChart3,
   },
   {
@@ -61,15 +69,15 @@ export function Sidebar() {
       }}
       className="
         relative flex min-h-screen flex-col
-        border-r border-zinc-800
-        bg-zinc-950/95
+        border-r border-border
+        bg-sidebar/95
         backdrop-blur-xl
       "
     >
       <div
         className="
           flex items-center justify-between
-          border-b border-zinc-800
+          border-b border-border
           px-5 py-5
         "
       >
@@ -92,7 +100,7 @@ export function Sidebar() {
               className="
                 text-2xl font-bold
                 tracking-tight
-                text-white
+                text-foreground
               "
             >
               AI Ops
@@ -101,7 +109,7 @@ export function Sidebar() {
             <p
               className="
                 mt-1 text-xs
-                text-zinc-400
+                text-muted-foreground
               "
             >
               Incident Intelligence
@@ -114,11 +122,11 @@ export function Sidebar() {
           className="
             flex h-9 w-9 items-center
             justify-center rounded-xl
-            border border-zinc-800
-            bg-zinc-900 text-zinc-400
+            border border-border
+            bg-card text-muted-foreground
             transition-all duration-200
-            hover:bg-zinc-800
-            hover:text-white
+            hover:bg-muted
+            hover:text-foreground
           "
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
@@ -157,7 +165,7 @@ export function Sidebar() {
                   ${
                     isActive
                       ? "bg-white text-black shadow-lg"
-                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white"
+                      : "text-muted-foreground hover:bg-card hover:text-foreground"
                   }
                 `}
               >
@@ -200,7 +208,7 @@ export function Sidebar() {
                           rounded-full
                           bg-red-500 px-2
                           text-xs font-semibold
-                          text-white
+                          text-foreground
                         "
                       >
                         {item.badge}
@@ -216,16 +224,22 @@ export function Sidebar() {
 
       <div
         className="
-          border-t border-zinc-800
+          space-y-3 border-t border-border
           p-4
         "
       >
+        <ConnectWithMe collapsed={collapsed} />
+
+        <div className={collapsed ? "flex justify-center" : ""}>
+          <ThemeToggle variant={collapsed ? "icon" : "compact"} />
+        </div>
+
         <div
           className="
             flex items-center gap-3
             rounded-2xl border
-            border-zinc-800
-            bg-zinc-900/80 p-3
+            border-border
+            bg-card/80 p-3
           "
         >
           <div
@@ -246,7 +260,7 @@ export function Sidebar() {
               <p
                 className="
                   text-sm font-medium
-                  text-white
+                  text-foreground
                 "
               >
                 Sarvesh
@@ -254,7 +268,7 @@ export function Sidebar() {
 
               <p
                 className="
-                  text-xs text-zinc-400
+                  text-xs text-muted-foreground
                 "
               >
                 AI Engineer

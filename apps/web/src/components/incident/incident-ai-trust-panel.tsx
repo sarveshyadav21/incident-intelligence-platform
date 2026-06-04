@@ -65,7 +65,7 @@ export function IncidentAiTrustPanel({
                 {aiInsights.unsupportedClaims.map((claim) => (
                   <li
                     key={claim}
-                    className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-zinc-300"
+                    className="rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-foreground/80"
                   >
                     {claim}
                   </li>
@@ -80,17 +80,17 @@ export function IncidentAiTrustPanel({
           <h3 className="text-sm font-semibold uppercase tracking-wide text-cyan-400">
             Situation Judgment
           </h3>
-          <div className="mt-3 space-y-2 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 text-sm text-zinc-300">
+          <div className="mt-3 space-y-2 rounded-2xl border border-border bg-card/60 p-4 text-sm text-foreground/80">
             <p>
-              <span className="text-zinc-500">Urgency:</span>{" "}
+              <span className="text-muted-foreground">Urgency:</span>{" "}
               {aiInsights.situationJudgment.urgency}
             </p>
             <p>
-              <span className="text-zinc-500">Response mode:</span>{" "}
+              <span className="text-muted-foreground">Response mode:</span>{" "}
               {aiInsights.situationJudgment.recommendedResponseMode}
             </p>
             <p>
-              <span className="text-zinc-500">Blast radius:</span>{" "}
+              <span className="text-muted-foreground">Blast radius:</span>{" "}
               {aiInsights.situationJudgment.blastRadius}
             </p>
             <p className="leading-6">{aiInsights.situationJudgment.rationale}</p>
@@ -107,15 +107,15 @@ export function IncidentAiTrustPanel({
             {aiInsights.evidence.map((item, index) => (
               <div
                 key={`${item.quote}-${index}`}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4"
+                className="rounded-2xl border border-border bg-card/60 p-4"
               >
-                <p className="text-xs font-medium uppercase text-zinc-500">
+                <p className="text-xs font-medium uppercase text-muted-foreground">
                   {item.signalType}
                 </p>
-                <p className="mt-2 font-mono text-xs text-zinc-400">
+                <p className="mt-2 font-mono text-xs text-muted-foreground">
                   {item.quote}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-zinc-300">
+                <p className="mt-2 text-sm leading-6 text-foreground/80">
                   {item.interpretation}
                 </p>
               </div>
@@ -126,16 +126,16 @@ export function IncidentAiTrustPanel({
 
       {hypotheses.length > 0 && (
         <section>
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Root Cause Hypotheses
           </h3>
           <div className="mt-3 space-y-3">
             {hypotheses.map((hypothesis) => (
               <div
                 key={hypothesis.id}
-                className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4"
+                className="rounded-2xl border border-border bg-card/60 p-4"
               >
-                <p className="text-sm text-zinc-300">{hypothesis.hypothesis}</p>
+                <p className="text-sm text-foreground/80">{hypothesis.hypothesis}</p>
                 <p className="mt-2 text-xs text-violet-400">
                   Confidence {hypothesis.confidenceScore}%
                 </p>
@@ -164,7 +164,7 @@ function ScoreCard({
 
   const tone =
     value === null || value === undefined
-      ? "text-zinc-500"
+      ? "text-muted-foreground"
       : invert
         ? value > 0.5
           ? "text-red-400"
@@ -174,8 +174,8 @@ function ScoreCard({
           : "text-yellow-400";
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4 text-center">
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
+    <div className="rounded-2xl border border-border bg-background p-4 text-center">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className={`mt-2 text-xl font-semibold ${tone}`}>{display}</p>
     </div>
   );

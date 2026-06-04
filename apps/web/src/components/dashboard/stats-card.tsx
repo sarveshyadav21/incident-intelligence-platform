@@ -34,8 +34,8 @@ export function StatsCard({
       className="
         relative overflow-hidden
         rounded-3xl border
-        border-zinc-800
-        bg-zinc-900/70
+        border-border
+        bg-card/70
         p-6 backdrop-blur-xl
       "
     >
@@ -54,7 +54,7 @@ export function StatsCard({
             <p
               className="
                 text-sm font-medium
-                text-zinc-400
+                text-muted-foreground
               "
             >
               {title}
@@ -86,7 +86,7 @@ export function StatsCard({
         <p
           className="
             mt-6 text-sm
-            text-zinc-500
+            text-muted-foreground
           "
         >
           {description}

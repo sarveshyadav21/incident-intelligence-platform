@@ -9,8 +9,11 @@ import { IncidentsGateway } from '../../infrastructure/websocket/incidents.gatew
 import { TimelineService } from './timeline/incident-timeline.service';
 import { IncidentAnalysisOrchestrator } from './orchestration/incident-analysis-orchestrator';
 import { IncidentInputNormalizerService } from './services/incident-input-normalizer.service';
-import { IncidentUploadService } from './services/incident-upload.service';
-import { IncidentFeedbackService } from './services/incident-feedback.service';
+import { AnalysisRunService } from './services/analysis-run.service';
+import { IncidentReportingService } from './services/incident-reporting.service';
+import { AuditLogService } from './services/audit-log.service';
+import { IncidentAccessService } from './services/incident-access.service';
+
 @Injectable()
 export class IncidentsService {
   constructor(
@@ -21,13 +24,16 @@ export class IncidentsService {
     private readonly timelineService: TimelineService,
     private readonly incidentAnalysisOrchestrator: IncidentAnalysisOrchestrator,
     private readonly incidentInputNormalizerService: IncidentInputNormalizerService,
-    private readonly incidentUploadService: IncidentUploadService,
-    private readonly incidentFeedbackService: IncidentFeedbackService,
+    private readonly analysisRunService: AnalysisRunService,
+    private readonly incidentReportingService: IncidentReportingService,
+    private readonly auditLogService: AuditLogService,
+    private readonly incidentAccessService: IncidentAccessService,
   ) {}
 
-  async createIncident(createIncidentDto: CreateIncidentDto) {
-    return this.prismaService.incident.create({
+  async createIncident(createIncidentDto: CreateIncidentDto, userId: string) {
+    const incident = await this.prismaService.incident.create({
       data: {
+        userId,
         title: createIncidentDto.title,
         severity: createIncidentDto.severity,
         source: createIncidentDto.source,
@@ -35,10 +41,20 @@ export class IncidentsService {
         affectedServices: [],
       },
     });
+
+    await this.auditLogService.log({
+      action: 'INCIDENT_CREATED',
+      entityType: 'Incident',
+      entityId: incident.id,
+      incidentId: incident.id,
+    });
+
+    return incident;
   }
 
-  async getAllIncidents() {
+  async getAllIncidents(userId: string) {
     return this.prismaService.incident.findMany({
+      where: { userId },
       orderBy: {
         createdAt: 'desc',
       },
@@ -64,7 +80,6 @@ export class IncidentsService {
       analyzeDto.logs,
     );
 
-    // STEP 1 — GENERATE EMBEDDING
     const embedding = await this.embeddingService.generateEmbedding(
       inputProfile.normalizedLogs,
     );
@@ -78,12 +93,23 @@ export class IncidentsService {
       incidentId: analyzeDto.incidentId,
     });
 
-    // STEP 2 — SIMILARITY SEARCH
+    const incidentOwner = analyzeDto.incidentId
+      ? await this.prismaService.incident.findUnique({
+          where: { id: analyzeDto.incidentId },
+          select: { userId: true },
+        })
+      : null;
+
     const similarIncidents =
-      await this.similaritySearchService.findSimilarIncidents(embedding);
+      await this.similaritySearchService.findSimilarIncidents(
+        embedding,
+        analyzeDto.incidentId,
+        5,
+        incidentOwner?.userId ?? undefined,
+      );
 
     const filteredIncidents = similarIncidents.filter(
-      (incident) => incident.similarity > 0.8,
+      (incident) => incident.similarity > 0.65,
     );
     const similarityScores = filteredIncidents.map(
       (incident) => incident.similarity,
@@ -110,6 +136,11 @@ ${JSON.stringify(incident.remediationSteps)}
         incidentId: analyzeDto.incidentId,
         data: {
           similarIncidentsCount: filteredIncidents.length,
+          similarIncidents: filteredIncidents.map((item) => ({
+            id: item.id,
+            title: item.title,
+            similarity: item.similarity,
+          })),
         },
       },
     );
@@ -117,9 +148,15 @@ ${JSON.stringify(incident.remediationSteps)}
       jobId: jobId ?? '',
       stage: 'SIMILAR_INCIDENTS_RETRIEVED',
       incidentId: analyzeDto.incidentId,
+      metadata: {
+        similarIncidents: filteredIncidents.map((item) => ({
+          id: item.id,
+          title: item.title,
+          similarity: item.similarity,
+        })),
+      },
     });
 
-    // STEP 3 — ORCHESTRATED AI ANALYSIS
     const orchestratedAnalysis =
       await this.incidentAnalysisOrchestrator.analyze({
         logs: inputProfile.normalizedLogs,
@@ -134,9 +171,16 @@ ${JSON.stringify(incident.remediationSteps)}
             : undefined,
       });
 
-    this.incidentsGateway.emitJobProgress(jobId ?? '', 'AI_ANALYSIS_COMPLETED', {
-      incidentId: analyzeDto.incidentId,
-    });
+    this.incidentsGateway.emitJobProgress(
+      jobId ?? '',
+      'AI_ANALYSIS_COMPLETED',
+      {
+        incidentId: analyzeDto.incidentId,
+        data: {
+          partialFailures: orchestratedAnalysis.partialFailures,
+        },
+      },
+    );
     await this.timelineService.logEvent({
       jobId: jobId ?? '',
       stage: 'AI_ANALYSIS_COMPLETED',
@@ -148,10 +192,10 @@ ${JSON.stringify(incident.remediationSteps)}
         inputProfile: orchestratedAnalysis.inputProfile,
         evidence: orchestratedAnalysis.evidence,
         situationJudgment: orchestratedAnalysis.situationJudgment,
+        partialFailures: orchestratedAnalysis.partialFailures,
       },
     });
 
-    // STEP 4 — STORE INCIDENT
     const incident = await this.prismaService.incident.update({
       where: {
         id: analyzeDto.incidentId,
@@ -159,20 +203,13 @@ ${JSON.stringify(incident.remediationSteps)}
 
       data: {
         aiSeverity: orchestratedAnalysis.analysis.severity,
-
         rootCause: orchestratedAnalysis.analysis.rootCause,
-
         remediationSteps: orchestratedAnalysis.analysis.remediationSteps,
-
         status: 'COMPLETED',
         confidenceScore: orchestratedAnalysis.analysis.confidenceScore,
-
         affectedServices: orchestratedAnalysis.analysis.affectedServices,
-
         aiSummary: orchestratedAnalysis.analysis.aiSummary,
-
         impactAssessment: orchestratedAnalysis.analysis.impactAssessment,
-
         detectionSource: orchestratedAnalysis.analysis.detectionSource,
       },
     });
@@ -199,7 +236,6 @@ ${JSON.stringify(incident.remediationSteps)}
       incidentId: analyzeDto.incidentId,
     });
 
-    // STEP 5 — STORE EMBEDDING
     await this.prismaService.$executeRawUnsafe(
       `
       UPDATE incidents
@@ -219,9 +255,38 @@ ${JSON.stringify(incident.remediationSteps)}
       incidentId: analyzeDto.incidentId,
     });
 
+    const analysisRun = await this.analysisRunService.createRun({
+      incidentId: incident.id,
+      jobId: jobId ?? '',
+      status: 'COMPLETED',
+      snapshot: {
+        analysis: orchestratedAnalysis.analysis,
+        review: orchestratedAnalysis.review,
+        evidence: orchestratedAnalysis.evidence,
+        situationJudgment: orchestratedAnalysis.situationJudgment,
+        partialFailures: orchestratedAnalysis.partialFailures,
+      },
+      rootCause: orchestratedAnalysis.analysis.rootCause,
+      aiSummary: orchestratedAnalysis.analysis.aiSummary,
+      remediationSteps: orchestratedAnalysis.analysis.remediationSteps,
+      confidenceScore: orchestratedAnalysis.analysis.confidenceScore,
+      aiSeverity: orchestratedAnalysis.analysis.severity,
+      similarIncidents: filteredIncidents.map((item) => ({
+        targetIncidentId: item.id,
+        targetTitle: item.title,
+        similarity: item.similarity,
+      })),
+    });
+
+    await this.incidentReportingService.generateReportsForIncident(
+      incident.id,
+      analysisRun.id,
+      jobId,
+    );
+
     return {
       ...incident,
-
+      analysisRunId: analysisRun.id,
       aiEvaluation: {
         confidenceScore: orchestratedAnalysis.analysis.confidenceScore,
         confidenceRationale: orchestratedAnalysis.confidenceRationale,
@@ -232,57 +297,91 @@ ${JSON.stringify(incident.remediationSteps)}
         situationJudgment: orchestratedAnalysis.situationJudgment,
         inputProfile: orchestratedAnalysis.inputProfile,
         retrievedIncidents: filteredIncidents.length,
+        similarIncidents: filteredIncidents.map((item) => ({
+          id: item.id,
+          title: item.title,
+          similarity: Number((item.similarity * 100).toFixed(0)),
+        })),
+        partialFailures: orchestratedAnalysis.partialFailures,
       },
     };
   }
-  async getIncidentTimeline(jobId: string) {
+
+  async getIncidentTimeline(jobId: string, userId: string) {
+    const mappedJob = await this.prismaService.incidentAnalysisJob.findUnique({
+      where: { trackingId: jobId },
+      select: { incidentId: true },
+    });
+
+    if (mappedJob?.incidentId) {
+      await this.incidentAccessService.assertOwner(mappedJob.incidentId, userId);
+    }
+
     return this.timelineService.getTimelineByJobId(jobId);
   }
-  async getIncidentById(id: string) {
-    return this.prismaService.incident.findUnique({
-      where: {
-        id,
-      },
 
+  async getRetryHistory(incidentId: string, userId: string) {
+    await this.incidentAccessService.assertOwner(incidentId, userId);
+
+    const events = await this.prismaService.incidentTimelineEvent.findMany({
+      where: {
+        incidentId,
+        stage: { in: ['JOB_RETRYING', 'JOB_FAILED', 'JOB_STARTED'] },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return events.map((event) => ({
+      id: event.id,
+      stage: event.stage,
+      createdAt: event.createdAt,
+      metadata: event.metadata,
+    }));
+  }
+
+  async getIncidentById(id: string, userId: string) {
+    await this.incidentAccessService.assertOwner(id, userId);
+
+    const incident = await this.prismaService.incident.findUnique({
+      where: { id },
       include: {
         evaluations: true,
-
         timelineEvents: {
-          orderBy: {
-            createdAt: 'asc',
-          },
+          orderBy: { createdAt: 'asc' },
         },
-
         hypotheses: true,
-
         uploads: true,
-
         feedback: {
-          orderBy: {
-            createdAt: 'desc',
+          orderBy: { createdAt: 'desc' },
+        },
+        analysisRuns: {
+          orderBy: { runNumber: 'desc' },
+          include: {
+            similarSnapshots: true,
+            executiveSummary: true,
+            postmortem: true,
+            dependencyGraph: true,
           },
         },
       },
     });
-  }
-  private async createTimelineEvent(
-    incidentId: string,
-    stage: string,
-    metadata?: unknown,
-  ) {
-    return this.prismaService.incidentTimelineEvent.create({
-      data: {
-        incidentId,
-        jobId: crypto.randomUUID(),
 
-        stage,
+    if (!incident) {
+      return null;
+    }
 
-        metadata:
-          metadata !== undefined
-            ? (metadata as Prisma.InputJsonValue)
-            : undefined,
-      },
-    });
+    const [executiveSummary, postmortem, dependencyGraph] = await Promise.all([
+      this.incidentReportingService.getExecutiveSummary(id),
+      this.incidentReportingService.getPostmortem(id),
+      this.incidentReportingService.getDependencyGraph(id),
+    ]);
+
+    return {
+      ...incident,
+      executiveSummary,
+      postmortem,
+      dependencyGraph,
+    };
   }
 
   private mapHallucinationRiskToScore(risk: 'LOW' | 'MEDIUM' | 'HIGH') {

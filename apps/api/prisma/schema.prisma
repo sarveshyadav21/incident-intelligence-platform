@@ -7,8 +7,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  firstName    String
+  lastName     String?
+  passwordHash String?
+  provider     AuthProvider @default(EMAIL)
+  googleId     String?      @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  sessions  Session[]
+  incidents Incident[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
 model Incident {
   id       String           @id @default(cuid())
+  userId   String?
   title    String
   status   IncidentStatus   @default(PENDING)
   severity IncidentSeverity
@@ -24,17 +55,27 @@ model Incident {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  uploads        Upload[]
-  feedback       IncidentFeedback[]
-  hypotheses     RootCauseHypothesis[]
-  evaluations    IncidentEvaluation[]
-  timelineEvents IncidentTimelineEvent[]
-  confidenceScore   Float?
+  uploads            Upload[]
+  feedback           IncidentFeedback[]
+  hypotheses         RootCauseHypothesis[]
+  evaluations        IncidentEvaluation[]
+  timelineEvents     IncidentTimelineEvent[]
+  confidenceScore    Float?
   affectedServices   String[]
-  impactAssessment  String?
-  detectionSource   String?
-  aiSummary         String?
+  impactAssessment   String?
+  detectionSource    String?
+  aiSummary          String?
 
+  analysisRuns       AnalysisRun[]
+  analysisJobs       IncidentAnalysisJob[]
+  agentMetrics       AgentRunMetric[]
+  executiveSummaries ExecutiveSummary[]
+  postmortems        Postmortem[]
+  dependencyGraphs   DependencyGraph[]
+  auditLogs          AuditLog[]
+  user               User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
   @@map("incidents")
 }
 
@@ -47,6 +88,8 @@ model Upload {
   storageKey String
   parsedText String?
   status     UploadStatus @default(PENDING)
+  fileSize   Int?
+  previewUrl String?
 
   createdAt DateTime @default(now())
 
@@ -63,6 +106,9 @@ model IncidentFeedback {
   originalValue  String?
   correctedValue String?
   reason         String?
+
+  rating         Int?
+  category       String?
 
   createdAt DateTime @default(now())
 
@@ -133,14 +179,216 @@ model IncidentAnalysisJob {
   id String @id @default(cuid())
 
   trackingId String @unique
-
   bullmqJobId String @unique
+  incidentId  String?
+  status      String
+  attemptCount Int @default(0)
 
-  status String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  incident Incident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+
+  @@index([incidentId])
+  @@map("incident_analysis_jobs")
+}
+
+model AnalysisRun {
+  id         String @id @default(cuid())
+  incidentId String
+  jobId      String
+  runNumber  Int
+  status     String
+
+  snapshot Json
+
+  rootCause        String?
+  aiSummary        String?
+  remediationSteps Json?
+  confidenceScore  Float?
+  aiSeverity       String?
 
   createdAt DateTime @default(now())
 
-  @@map("incident_analysis_jobs")
+  incident            Incident                  @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  similarSnapshots    SimilarIncidentSnapshot[]
+  executiveSummary    ExecutiveSummary?
+  postmortem          Postmortem?
+  dependencyGraph     DependencyGraph?
+
+  @@index([incidentId])
+  @@map("analysis_runs")
+}
+
+model SimilarIncidentSnapshot {
+  id               String @id @default(cuid())
+  analysisRunId    String?
+  sourceIncidentId String
+  targetIncidentId String
+  targetTitle      String
+  similarity       Float
+
+  createdAt DateTime @default(now())
+
+  analysisRun AnalysisRun? @relation(fields: [analysisRunId], references: [id], onDelete: Cascade)
+
+  @@map("similar_incident_snapshots")
+}
+
+model AgentRunMetric {
+  id         String @id @default(cuid())
+  incidentId String
+  jobId      String
+  agent      String
+  model      String
+  durationMs Int
+  success    Boolean
+  tokenCountEstimate Int?
+  costEstimate       Float?
+
+  createdAt DateTime @default(now())
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@index([incidentId])
+  @@index([jobId])
+  @@map("agent_run_metrics")
+}
+
+model PromptVersion {
+  id            String @id @default(cuid())
+  agent         String
+  promptVersion String
+  promptContent String @db.Text
+  modelUsed     String
+  jobId         String?
+  incidentId    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([agent, promptVersion])
+  @@map("prompt_versions")
+}
+
+model ExecutiveSummary {
+  id            String @id @default(cuid())
+  incidentId    String
+  analysisRunId String? @unique
+
+  overview         String @db.Text
+  customerImpact   String @db.Text
+  rootCause        String @db.Text
+  actionsTaken     String @db.Text
+  followUps        String @db.Text
+  fullContent      Json?
+
+  createdAt DateTime @default(now())
+
+  incident    Incident     @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  analysisRun AnalysisRun? @relation(fields: [analysisRunId], references: [id], onDelete: SetNull)
+
+  @@map("executive_summaries")
+}
+
+model Postmortem {
+  id            String @id @default(cuid())
+  incidentId    String
+  analysisRunId String? @unique
+
+  markdown String @db.Text
+  sections Json
+
+  createdAt DateTime @default(now())
+
+  incident    Incident     @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  analysisRun AnalysisRun? @relation(fields: [analysisRunId], references: [id], onDelete: SetNull)
+
+  @@map("postmortems")
+}
+
+model DependencyGraph {
+  id            String @id @default(cuid())
+  incidentId    String
+  analysisRunId String? @unique
+
+  nodes Json
+  edges Json
+
+  createdAt DateTime @default(now())
+
+  incident    Incident     @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  analysisRun AnalysisRun? @relation(fields: [analysisRunId], references: [id], onDelete: SetNull)
+
+  @@map("dependency_graphs")
+}
+
+model AuditLog {
+  id         String @id @default(cuid())
+  incidentId String?
+  action     String
+  entityType String
+  entityId   String?
+  userId     String?
+  metadata   Json?
+
+  createdAt DateTime @default(now())
+
+  incident Incident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+
+  @@index([incidentId])
+  @@map("audit_logs")
+}
+
+model Organization {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  createdAt DateTime @default(now())
+
+  teams Team[]
+
+  @@map("organizations")
+}
+
+model Team {
+  id             String @id @default(cuid())
+  organizationId String
+  name           String
+
+  createdAt DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  members      TeamMember[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id     String @id @default(cuid())
+  teamId String
+  email  String
+  role   UserRole @default(VIEWER)
+
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, email])
+  @@map("team_members")
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  GUEST
+}
+
+enum UserRole {
+  ADMIN
+  INCIDENT_COMMANDER
+  ENGINEER
+  VIEWER
 }
 
 enum IncidentStatus {

@@ -1,8 +1,10 @@
 # Incident Intelligence Platform — Agent Handoff Document
 
-**Version:** 1.0 (June 2026)  
+**Version:** 1.1 (June 2026)  
 **Audience:** Engineers or AI coding agents picking up this codebase  
 **Goal:** Understand architecture, file layout, current behavior, gaps, and exact steps to close them
+
+> **See also:** [PROJECT-PROGRESS.md](./PROJECT-PROGRESS.md) for the latest multi-model orchestration, BullMQ fixes, WebSocket events (`job-status`, `timeline-event`, `agent.lifecycle`), and Datadog integration status.
 
 ---
 

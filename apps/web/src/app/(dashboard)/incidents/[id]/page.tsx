@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { use } from "react";
+import { use, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
+import { socket } from "../../../../lib/socket";
 
 import { useIncident } from "../../../../features/incidents/hooks/use-incident";
 import { useIncidentTimeline } from "../../../../features/incidents/hooks/use-incident-timeline";
@@ -24,11 +25,21 @@ export default function IncidentDetailPage({ params }: IncidentPageProps) {
   const { data: incident, isLoading, isError } = useIncident(id);
   const jobId = useIncidentJobId(incident ?? null);
   const liveStage = useAnalysisJobsStore((state) => state.liveStages[id]);
+  const agentEvents = useAnalysisJobsStore(
+    (state) => state.agentLifecycleByIncident[id] ?? [],
+  );
   const { data: timelineEvents, isLoading: timelineLoading } =
-    useIncidentTimeline(jobId ?? null);
+    useIncidentTimeline(jobId ?? null, id);
+
+  useEffect(() => {
+    socket.emit("join-incident", id);
+    return () => {
+      socket.emit("leave-incident", id);
+    };
+  }, [id]);
 
   if (isLoading) {
-    return <p className="text-zinc-400">Loading investigation workspace...</p>;
+    return <p className="text-muted-foreground">Loading investigation workspace...</p>;
   }
 
   if (isError || !incident) {
@@ -41,7 +52,7 @@ export default function IncidentDetailPage({ params }: IncidentPageProps) {
           <ArrowLeft className="h-4 w-4" />
           Back to incidents
         </Link>
-        <p className="text-zinc-400">Incident not found.</p>
+        <p className="text-muted-foreground">Incident not found.</p>
       </div>
     );
   }
@@ -61,6 +72,7 @@ export default function IncidentDetailPage({ params }: IncidentPageProps) {
         timelineEvents={timelineEvents ?? incident.timelineEvents}
         timelineLoading={timelineLoading}
         liveStage={liveStage}
+        agentEvents={agentEvents}
         showWorkspaceLink={false}
       />
     </div>

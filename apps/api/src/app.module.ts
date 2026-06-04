@@ -8,6 +8,8 @@ import { IncidentsModule } from './modules/incidents/incidents.module';
 import { LLMModule } from './infrastructure/llm/llm.module';
 import { EmbeddingModule } from './infrastructure/embeddings/embedding.module';
 import { QueueModule } from './infrastructure/queue/queue.module';
+import { DatadogModule } from './modules/integrations/datadog/datadog.module';
+import { AuthModule } from './modules/auth/auth.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -19,11 +21,14 @@ import { QueueModule } from './infrastructure/queue/queue.module';
 
     PrismaModule,
 
+    AuthModule,
+
     HealthModule,
     IncidentsModule,
     LLMModule,
     EmbeddingModule,
     QueueModule,
+    DatadogModule,
   ],
 })
 export class AppModule {}

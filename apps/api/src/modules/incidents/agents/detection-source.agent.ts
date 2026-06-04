@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-
+import { AGENT_MODELS } from '../../../config/agent-models.config';
 import { LLMService } from '../../../infrastructure/llm/llm.service';
 
 @Injectable()
@@ -25,7 +25,10 @@ Logs:
 ${logs}
 `;
 
-    const response = await this.llmService.generateTextCompletion(prompt);
+    const response = await this.llmService.generateTextCompletion(
+      prompt,
+      AGENT_MODELS.detectionSource,
+    );
 
     return response.trim();
   }

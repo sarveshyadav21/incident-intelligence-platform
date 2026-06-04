@@ -12,7 +12,9 @@ import { TimelineService } from '../timeline/incident-timeline.service';
 
 import { PrismaService } from '../../../infrastructure/prisma/prisma.service';
 
-@Processor('incident-analysis')
+import { INCIDENT_ANALYSIS_WORKER_OPTIONS } from '../../../config/queue.config';
+
+@Processor('incident-analysis', INCIDENT_ANALYSIS_WORKER_OPTIONS)
 export class IncidentAnalysisWorker extends WorkerHost {
   constructor(
     private readonly incidentsService: IncidentsService,
@@ -24,107 +26,130 @@ export class IncidentAnalysisWorker extends WorkerHost {
   }
 
   async process(job: Job<AnalyzeAndStoreIncidentDto>) {
-    try {
-      console.log(`Processing incident job: ${job.data.trackingId}`);
+    const { trackingId, incidentId } = job.data;
 
-      this.incidentsGateway.emitJobProgress(job.data.trackingId, 'JOB_STARTED', {
-        incidentId: job.data.incidentId,
+    try {
+      console.log(`Processing incident job: ${trackingId}`);
+
+      await this.setJobStatus(trackingId, 'RUNNING', incidentId);
+
+      this.incidentsGateway.emitJobProgress(trackingId, 'JOB_STARTED', {
+        incidentId,
       });
 
       await this.timelineService.logEvent({
-        jobId: job.data.trackingId,
-
-        incidentId: job.data.incidentId,
-
+        jobId: trackingId,
+        incidentId,
         stage: 'JOB_STARTED',
       });
 
       await this.prismaService.incident.update({
-        where: {
-          id: job.data.incidentId,
-        },
-
-        data: {
-          status: 'PROCESSING',
-        },
+        where: { id: incidentId },
+        data: { status: 'PROCESSING' },
       });
+
       await this.timelineService.logEvent({
-        jobId: job.data.trackingId,
-
-        incidentId: job.data.incidentId,
-
+        jobId: trackingId,
+        incidentId,
         stage: 'AI_ANALYSIS_STARTED',
       });
 
       const result = await this.incidentsService.analyzeAndStoreIncident(
         job.data,
-        job.data.trackingId,
+        trackingId,
       );
 
       await this.timelineService.logEvent({
-        jobId: job.data.trackingId,
-
-        incidentId: job.data.incidentId,
-
+        jobId: trackingId,
+        incidentId,
         stage: 'ROOT_CAUSE_IDENTIFIED',
-
         metadata: {
           confidenceScore: result.confidenceScore,
         },
       });
+
       await this.timelineService.logEvent({
-        jobId: job.data.trackingId,
-
-        incidentId: job.data.incidentId,
-
+        jobId: trackingId,
+        incidentId,
         stage: 'REMEDIATION_GENERATED',
       });
+
+      await this.setJobStatus(trackingId, 'COMPLETED', incidentId);
+
       this.incidentsGateway.emitIncidentCompleted(
-        job.data.trackingId,
+        trackingId,
         result,
-        job.data.incidentId,
+        incidentId,
       );
+
       await this.timelineService.logEvent({
-        jobId: job.data.trackingId,
-
-        incidentId: job.data.incidentId,
-
+        jobId: trackingId,
+        incidentId,
         stage: 'INCIDENT_RESOLVED',
       });
 
       return result;
     } catch (error) {
-      await this.prismaService.incident.update({
-        where: {
-          id: job.data.incidentId,
-        },
+      const maxAttempts = job.opts.attempts ?? 1;
 
-        data: {
-          status: 'FAILED',
-        },
+      const isFinalAttempt = job.attemptsMade + 1 >= maxAttempts;
+
+      if (isFinalAttempt) {
+        await this.prismaService.incident.update({
+          where: { id: incidentId },
+          data: { status: 'FAILED' },
+        });
+
+        await this.setJobStatus(trackingId, 'FAILED', incidentId);
+      } else {
+        await this.setJobStatus(trackingId, 'RETRYING', incidentId);
+      }
+
+      const attemptNumber = job.attemptsMade + 1;
+
+      await this.prismaService.incidentAnalysisJob.updateMany({
+        where: { trackingId },
+        data: { attemptCount: attemptNumber },
       });
 
       await this.timelineService.logEvent({
-        jobId: job.data.trackingId,
-
-        incidentId: job.data.incidentId,
-
-        stage: 'JOB_FAILED',
-
+        jobId: trackingId,
+        incidentId,
+        stage: isFinalAttempt ? 'JOB_FAILED' : 'JOB_RETRYING',
         metadata: {
-          attempt: job.attemptsMade,
-
-          maxAttempts: job.opts.attempts,
-
+          attempt: attemptNumber,
+          maxAttempts,
+          succeeded: false,
           error: error instanceof Error ? error.message : 'Unknown error',
         },
       });
 
-      this.incidentsGateway.emitJobProgress(job.data.trackingId, 'JOB_FAILED', {
-        incidentId: job.data.incidentId,
-      });
+      if (!isFinalAttempt) {
+        await this.timelineService.logEvent({
+          jobId: trackingId,
+          incidentId,
+          stage: 'JOB_RETRY_SCHEDULED',
+          metadata: {
+            nextAttempt: attemptNumber + 1,
+            maxAttempts,
+          },
+        });
+      }
 
       throw error;
     }
+  }
+
+  private async setJobStatus(
+    trackingId: string,
+    status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 'RETRYING',
+    incidentId: string,
+  ) {
+    await this.prismaService.incidentAnalysisJob.updateMany({
+      where: { trackingId },
+      data: { status },
+    });
+
+    this.incidentsGateway.emitJobStatus(trackingId, status, incidentId);
   }
 }

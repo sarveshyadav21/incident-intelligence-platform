@@ -4,9 +4,10 @@ AI-powered incident investigation: multi-agent analysis, vector similarity, huma
 
 ## Documentation
 
-**Start here for full handoff to another developer or coding agent:**
+**Documentation for developers and coding agents:**
 
-→ **[docs/AGENT-HANDOFF.md](./docs/AGENT-HANDOFF.md)**
+→ **[docs/PROJECT-PROGRESS.md](./docs/PROJECT-PROGRESS.md)** — latest architecture, progress, fixes  
+→ **[docs/AGENT-HANDOFF.md](./docs/AGENT-HANDOFF.md)** — complete file map and API reference
 
 Includes: folder structure, every file's purpose, API reference, WebSocket events, gaps, and step-by-step fix instructions.
 

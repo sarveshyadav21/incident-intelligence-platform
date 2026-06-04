@@ -17,6 +17,8 @@ import { TimelineService } from '../timeline/incident-timeline.service';
 import { IncidentInputNormalizerService } from './incident-input-normalizer.service';
 import { IncidentUploadService } from './incident-upload.service';
 import { IncidentFeedbackService } from './incident-feedback.service';
+import { IncidentsGateway } from '../../../infrastructure/websocket/incidents.gateway';
+
 @Injectable()
 export class IncidentQueueService {
   constructor(
@@ -27,14 +29,19 @@ export class IncidentQueueService {
     private readonly incidentInputNormalizerService: IncidentInputNormalizerService,
     private readonly incidentUploadService: IncidentUploadService,
     private readonly incidentFeedbackService: IncidentFeedbackService,
+    private readonly incidentsGateway: IncidentsGateway,
   ) {}
-  async enqueueIncidentAnalysis(dto: AnalyzeAndStoreIncidentDto) {
+  async enqueueIncidentAnalysis(
+    dto: AnalyzeAndStoreIncidentDto,
+    userId?: string,
+  ) {
     const inputProfile = this.incidentInputNormalizerService.normalize(
       dto.logs,
     );
 
     const incident = await this.prismaService.incident.create({
       data: {
+        userId: userId ?? null,
         title: dto.title,
 
         severity: dto.severity,
@@ -83,24 +90,30 @@ export class IncidentQueueService {
     await this.prismaService.incidentAnalysisJob.create({
       data: {
         trackingId,
-
         bullmqJobId: String(job.id),
-
         status: 'QUEUED',
+        incidentId: incident.id,
       },
     });
+
+    this.incidentsGateway.emitJobStatus(trackingId, 'QUEUED', incident.id);
+
     return {
       jobId: trackingId,
       incidentId: incident.id,
     };
   }
 
-  async reanalyzeIncident(incidentId: string) {
+  async reanalyzeIncident(incidentId: string, userId: string) {
     const incident = await this.prismaService.incident.findUnique({
       where: { id: incidentId },
     });
 
     if (!incident) {
+      throw new NotFoundException('Incident not found');
+    }
+
+    if (incident.userId !== userId) {
       throw new NotFoundException('Incident not found');
     }
 
@@ -158,18 +171,28 @@ export class IncidentQueueService {
         trackingId,
         bullmqJobId: String(job.id),
         status: 'QUEUED',
+        incidentId,
       },
     });
+
+    this.incidentsGateway.emitJobStatus(trackingId, 'QUEUED', incidentId);
 
     return {
       jobId: trackingId,
       incidentId,
     };
   }
-  async getJobStatus(jobId: string): Promise<JobStatusResponse> {
+
+  async getJobStatus(
+    jobId: string,
+    userId: string,
+  ): Promise<JobStatusResponse> {
     const mappedJob = await this.prismaService.incidentAnalysisJob.findUnique({
       where: {
         trackingId: jobId,
+      },
+      include: {
+        incident: { select: { userId: true } },
       },
     });
 
@@ -181,6 +204,15 @@ export class IncidentQueueService {
 
         result: null,
 
+        failedReason: null,
+      };
+    }
+
+    if (mappedJob.incident?.userId && mappedJob.incident.userId !== userId) {
+      return {
+        jobId,
+        status: 'NOT_FOUND',
+        result: null,
         failedReason: null,
       };
     }
@@ -203,11 +235,9 @@ export class IncidentQueueService {
 
     return {
       jobId,
-
-      status: state,
-
+      status: mappedJob.status,
+      bullmqState: state,
       result: (job.returnvalue as unknown) ?? null,
-
       failedReason: job.failedReason ?? null,
     };
   }

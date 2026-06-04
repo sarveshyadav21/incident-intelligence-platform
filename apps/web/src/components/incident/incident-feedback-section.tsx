@@ -76,7 +76,7 @@ export function IncidentFeedbackSection({
               variant="outline"
               disabled={createFeedback.isPending}
               onClick={() => submit("ACCEPT")}
-              className="h-8 gap-1 border-zinc-800 bg-zinc-900 px-2 text-xs text-emerald-400"
+              className="h-8 gap-1 border-border bg-card px-2 text-xs text-emerald-400"
             >
               <Check className="h-3 w-3" />
               Accept
@@ -89,7 +89,7 @@ export function IncidentFeedbackSection({
                 setDraft(value);
                 setEditing(true);
               }}
-              className="h-8 gap-1 border-zinc-800 bg-zinc-900 px-2 text-xs text-violet-400"
+              className="h-8 gap-1 border-border bg-card px-2 text-xs text-violet-400"
             >
               <Pencil className="h-3 w-3" />
               Edit
@@ -99,7 +99,7 @@ export function IncidentFeedbackSection({
               variant="outline"
               disabled={createFeedback.isPending}
               onClick={() => submit("REJECT")}
-              className="h-8 gap-1 border-zinc-800 bg-zinc-900 px-2 text-xs text-red-400"
+              className="h-8 gap-1 border-border bg-card px-2 text-xs text-red-400"
             >
               <X className="h-3 w-3" />
               Reject
@@ -110,11 +110,11 @@ export function IncidentFeedbackSection({
 
       {editing && (
         <div className="w-full space-y-2">
-          <p className="text-xs text-zinc-500">Edit {label}</p>
+          <p className="text-xs text-muted-foreground">Edit {label}</p>
           <Textarea
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            className="min-h-24 border-zinc-800 bg-zinc-900 text-sm"
+            className="min-h-24 border-border bg-card text-sm"
           />
           <div className="flex gap-2">
             <Button
@@ -129,7 +129,7 @@ export function IncidentFeedbackSection({
               size="sm"
               variant="outline"
               onClick={() => setEditing(false)}
-              className="border-zinc-800"
+              className="border-border"
             >
               Cancel
             </Button>

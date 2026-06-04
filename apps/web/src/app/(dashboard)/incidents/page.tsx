@@ -25,7 +25,6 @@ export default function IncidentsPage() {
   const { data: incidents, isLoading } = useIncidents();
   const { data: trendData } = useIncidentTrends();
   const liveStages = useAnalysisJobsStore((state) => state.liveStages);
-
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(
     null,
   );
@@ -72,10 +71,10 @@ export default function IncidentsPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight text-white">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">
             Incidents
           </h1>
-          <p className="mt-2 text-zinc-400">
+          <p className="mt-2 text-muted-foreground">
             Monitor and investigate AI-powered incident analysis
           </p>
         </div>
@@ -121,26 +120,26 @@ export default function IncidentsPage() {
 
       <LiveActivityFeed activities={activityFeed} />
 
-      <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6">
+      <div className="rounded-3xl border border-border bg-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-foreground">
               Incident Severity Distribution
             </h2>
-            <p className="mt-1 text-sm text-zinc-400">
+            <p className="mt-1 text-sm text-muted-foreground">
               Uses AI severity when analysis is complete
             </p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setTimeFormat("12h")}
-              className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-400"
+              className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
             >
               12h
             </button>
             <button
               onClick={() => setTimeFormat("24h")}
-              className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-400"
+              className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
             >
               24h
             </button>
@@ -155,7 +154,7 @@ export default function IncidentsPage() {
           placeholder="Search incidents..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="w-full rounded-2xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-500 focus:border-violet-500/40"
+          className="w-full rounded-2xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-violet-500/40"
         />
       </div>
 
@@ -167,7 +166,7 @@ export default function IncidentsPage() {
             className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
               severityFilter === severity
                 ? "border-violet-500/30 bg-violet-500/10 text-violet-300"
-                : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700"
+                : "border-border bg-card text-muted-foreground hover:border-border"
             }`}
           >
             {severity}
@@ -184,7 +183,7 @@ export default function IncidentsPage() {
               className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
                 statusFilter === status
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                  : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700"
+                  : "border-border bg-card text-muted-foreground hover:border-border"
               }`}
             >
               {status}
@@ -194,7 +193,7 @@ export default function IncidentsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-zinc-400">Loading incidents...</div>
+        <div className="text-muted-foreground">Loading incidents...</div>
       ) : (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           {filteredIncidents?.map((incident) => (

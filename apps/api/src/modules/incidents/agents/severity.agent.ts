@@ -6,6 +6,7 @@ import { LLMService } from '../../../infrastructure/llm/llm.service';
 
 import { Severity, severitySchema } from '../types/severity.type';
 
+import { AGENT_MODELS } from '../../../config/agent-models.config';
 @Injectable()
 export class SeverityAgent {
   constructor(private readonly llmService: LLMService) {}
@@ -51,7 +52,10 @@ Logs:
 ${logs}
 `;
 
-    const response = await this.llmService.generateTextCompletion(prompt);
+    const response = await this.llmService.generateTextCompletion(
+      prompt,
+      AGENT_MODELS.severity,
+    );
 
     const normalizedSeverity = normalizeSeverity(response);
 
