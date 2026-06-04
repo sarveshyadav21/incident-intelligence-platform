@@ -86,10 +86,9 @@ export class IncidentQueueService {
     await this.prismaService.incidentAnalysisJob.create({
       data: {
         trackingId,
-
         bullmqJobId: String(job.id),
-
         status: 'QUEUED',
+        incidentId: incident.id,
       },
     });
 
@@ -164,6 +163,7 @@ export class IncidentQueueService {
         trackingId,
         bullmqJobId: String(job.id),
         status: 'QUEUED',
+        incidentId,
       },
     });
 

@@ -52,7 +52,7 @@ export class IncidentUploadService {
       status = 'FAILED';
     }
 
-    return this.prismaService.upload.create({
+    const upload = await this.prismaService.upload.create({
       data: {
         incidentId,
         fileName: file.originalname,
@@ -60,8 +60,14 @@ export class IncidentUploadService {
         storageKey,
         parsedText,
         status,
+        fileSize: buffer.length,
+        previewUrl: file.mimetype.startsWith('image/')
+          ? `data:${file.mimetype};base64,${buffer.toString('base64')}`
+          : null,
       },
     });
+
+    return upload;
   }
 
   async listUploads(incidentId: string) {

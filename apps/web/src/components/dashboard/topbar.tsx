@@ -2,8 +2,10 @@
 
 import { motion } from "framer-motion";
 
-import { Search, Bell, Command, Circle, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { Search, Bell, Command, Circle, ChevronDown, Sparkles } from "lucide-react";
 import { useSocket } from "../../providers/socket-provider";
+import { PORTFOLIO_CONNECT_LABEL, PORTFOLIO_URL } from "../../lib/portfolio";
 
 export function Topbar() {
   const { isConnected } = useSocket();
@@ -89,6 +91,24 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-4">
+          <Link
+            href={PORTFOLIO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="
+              hidden items-center gap-2 rounded-2xl border
+              border-violet-500/30 bg-gradient-to-r
+              from-violet-600/20 to-fuchsia-600/10
+              px-4 py-2.5 text-sm font-medium
+              text-violet-200 transition-all duration-200
+              hover:border-violet-400/50 hover:text-white
+              md:inline-flex
+            "
+          >
+            <Sparkles className="h-4 w-4" />
+            {PORTFOLIO_CONNECT_LABEL}
+          </Link>
+
           <button
             className="
               relative flex h-11 w-11
@@ -113,7 +133,10 @@ export function Topbar() {
             />
           </button>
 
-          <motion.button
+          <motion.a
+            href={PORTFOLIO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             whileHover={{
               scale: 1.02,
             }}
@@ -124,6 +147,7 @@ export function Topbar() {
               bg-zinc-900/80
               px-3 py-2
               transition-all duration-200
+              hover:border-violet-500/30
               hover:bg-zinc-800
             "
           >
@@ -160,7 +184,7 @@ export function Topbar() {
             </div>
 
             <ChevronDown size={16} className="text-zinc-500" />
-          </motion.button>
+          </motion.a>
         </div>
       </div>
     </header>

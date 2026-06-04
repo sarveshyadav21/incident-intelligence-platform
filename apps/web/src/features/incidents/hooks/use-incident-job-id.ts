@@ -12,7 +12,9 @@ export function useIncidentJobId(incident: IncidentDetail | null | undefined) {
 
   const storedJobId = incident ? incidentToJob[incident.id] : undefined;
 
-  const timelineJobId = incident?.timelineEvents?.[0]?.jobId;
+  const timelineJobId = incident?.timelineEvents?.length
+    ? incident.timelineEvents[incident.timelineEvents.length - 1]?.jobId
+    : undefined;
 
   useEffect(() => {
     if (!incident || storedJobId || !timelineJobId) {

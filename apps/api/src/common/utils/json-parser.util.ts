@@ -1,9 +1,20 @@
 export function extractJsonFromText(text: string): string {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
 
-  if (!jsonMatch) {
-    throw new Error('No valid JSON object found in AI response');
+  if (fenced?.[1]) {
+    return fenced[1].trim();
   }
 
-  return jsonMatch[0];
+  const objectMatch = text.match(/\{[\s\S]*\}/);
+  const arrayMatch = text.match(/\[[\s\S]*\]/);
+
+  if (objectMatch) {
+    return objectMatch[0];
+  }
+
+  if (arrayMatch) {
+    return arrayMatch[0];
+  }
+
+  throw new Error('No valid JSON object found in AI response');
 }

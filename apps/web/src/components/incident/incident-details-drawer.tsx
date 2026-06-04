@@ -86,7 +86,7 @@ export function IncidentDetailsDrawer({ incidentId, onClose }: Props) {
             }}
             onClick={(event) => event.stopPropagation()}
             className="
-              h-full w-full max-w-2xl
+              h-full w-full max-w-3xl
               overflow-y-auto
               border-l border-zinc-800
               bg-zinc-950

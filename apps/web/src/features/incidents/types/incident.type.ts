@@ -100,6 +100,8 @@ export type IncidentUpload = {
   storageKey: string;
   parsedText?: string | null;
   status?: "PENDING" | "PARSED" | "FAILED" | "RETRYING";
+  fileSize?: number | null;
+  previewUrl?: string | null;
   createdAt: string;
 };
 
@@ -109,7 +111,21 @@ export type FeedbackField =
   | "rootCause"
   | "aiSummary"
   | "remediation"
-  | "severity";
+  | "severity"
+  | "rootCauseAccuracy"
+  | "recommendationQuality"
+  | "overallUsefulness";
+
+export type RatingCategory =
+  | "rootCauseAccuracy"
+  | "recommendationQuality"
+  | "overallUsefulness";
+
+export type CreateRatingFeedbackInput = {
+  category: RatingCategory;
+  rating: number;
+  reason?: string;
+};
 
 export type IncidentFeedback = {
   id: string;
@@ -130,12 +146,99 @@ export type CreateFeedbackInput = {
   reason?: string;
 };
 
+export type SimilarIncidentMatch = {
+  id: string;
+  title: string;
+  rootCause?: string | null;
+  similarity: number;
+};
+
+export type AnalysisRun = {
+  id: string;
+  incidentId: string;
+  jobId: string;
+  runNumber: number;
+  status: string;
+  snapshot: Record<string, unknown>;
+  rootCause?: string | null;
+  aiSummary?: string | null;
+  remediationSteps?: string[];
+  confidenceScore?: number | null;
+  aiSeverity?: string | null;
+  createdAt: string;
+  similarSnapshots?: Array<{
+    id: string;
+    targetIncidentId: string;
+    targetTitle: string;
+    similarity: number;
+  }>;
+};
+
+export type ExecutiveSummary = {
+  id: string;
+  incidentId: string;
+  overview: string;
+  customerImpact: string;
+  rootCause: string;
+  actionsTaken: string;
+  followUps: string;
+  createdAt: string;
+};
+
+export type Postmortem = {
+  id: string;
+  incidentId: string;
+  markdown: string;
+  sections: Record<string, string>;
+  createdAt: string;
+};
+
+export type DependencyGraph = {
+  id: string;
+  incidentId: string;
+  nodes: Array<{ id: string; label: string; type: string }>;
+  edges: Array<{ id: string; source: string; target: string; label?: string }>;
+  createdAt: string;
+};
+
+export type QueueHealth = {
+  bullmq: {
+    queued: number;
+    running: number;
+    retrying: number;
+    failed: number;
+    completed: number;
+  };
+  database: Record<string, number>;
+  health: string;
+};
+
+export type AgentPerformanceMetric = {
+  agent: string;
+  avgDurationMs: number;
+  successRate: number;
+  runCount: number;
+};
+
+export type ModelUsageMetric = {
+  model: string;
+  avgExecutionMs: number;
+  estimatedTokens: number;
+  estimatedCost: number;
+  successRate: number;
+  runCount: number;
+};
+
 export type IncidentDetail = Incident & {
   evaluations: IncidentEvaluation[];
   timelineEvents: IncidentTimelineEvent[];
   hypotheses: RootCauseHypothesis[];
   uploads: IncidentUpload[];
   feedback: IncidentFeedback[];
+  analysisRuns?: AnalysisRun[];
+  executiveSummary?: ExecutiveSummary | null;
+  postmortem?: Postmortem | null;
+  dependencyGraph?: DependencyGraph | null;
 };
 
 export type IncidentTrendBucket = {

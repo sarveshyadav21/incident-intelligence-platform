@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, Trash2, RefreshCw } from "lucide-react";
+import { Upload, Trash2, RefreshCw, FileText, Image as ImageIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,9 @@ type Props = {
   incidentId: string;
   uploads: IncidentUpload[];
 };
+
+const ACCEPTED_TYPES =
+  ".log,.txt,.json,.csv,.pdf,.png,.jpg,.jpeg,.webp,.gif";
 
 export function IncidentUploadPanel({ incidentId, uploads }: Props) {
   const uploadFile = useUploadIncidentFile(incidentId);
@@ -35,11 +38,11 @@ export function IncidentUploadPanel({ incidentId, uploads }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-300 transition hover:border-violet-500/30 hover:text-white">
           <Upload className="h-4 w-4" />
-          {uploadFile.isPending ? "Uploading..." : "Attach log file"}
+          {uploadFile.isPending ? "Uploading..." : "Upload evidence"}
           <input
             type="file"
             className="hidden"
-            accept=".log,.txt,.json,.csv"
+            accept={ACCEPTED_TYPES}
             onChange={handleFileChange}
           />
         </label>
@@ -56,31 +59,62 @@ export function IncidentUploadPanel({ incidentId, uploads }: Props) {
         </Button>
       </div>
 
+      <p className="text-xs text-zinc-500">
+        Supports log files, screenshots, PDFs, Datadog exports (JSON), and
+        incident reports.
+      </p>
+
       {uploads.length === 0 ? (
         <p className="text-sm text-zinc-500">
-          No attachments yet. Upload logs to enrich analysis.
+          No attachments yet. Upload evidence to enrich analysis.
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {uploads.map((upload) => (
             <div
               key={upload.id}
-              className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3"
+              className="rounded-xl border border-zinc-800 bg-zinc-950 p-4"
             >
-              <div>
-                <p className="text-sm text-zinc-200">{upload.fileName}</p>
-                <p className="text-xs text-zinc-500">
-                  {upload.status ?? "PARSED"} ·{" "}
-                  {new Date(upload.createdAt).toLocaleString()}
-                </p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  {upload.mimeType?.startsWith("image/") ? (
+                    <ImageIcon className="mt-0.5 h-4 w-4 text-cyan-400" />
+                  ) : (
+                    <FileText className="mt-0.5 h-4 w-4 text-violet-400" />
+                  )}
+                  <div>
+                    <p className="text-sm text-zinc-200">{upload.fileName}</p>
+                    <p className="text-xs text-zinc-500">
+                      {upload.status ?? "PARSED"} · {upload.mimeType}
+                      {upload.fileSize
+                        ? ` · ${(upload.fileSize / 1024).toFixed(1)} KB`
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => deleteUpload.mutate(upload.id)}
+                  className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => deleteUpload.mutate(upload.id)}
-                className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-red-400"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+
+              {upload.previewUrl && upload.mimeType?.startsWith("image/") && (
+                <img
+                  src={upload.previewUrl}
+                  alt={upload.fileName}
+                  className="mt-3 max-h-48 rounded-lg border border-zinc-800 object-contain"
+                />
+              )}
+
+              {upload.parsedText && !upload.mimeType?.startsWith("image/") && (
+                <pre className="mt-3 max-h-32 overflow-auto rounded-lg border border-zinc-800 bg-black/40 p-3 text-xs text-zinc-500">
+                  {upload.parsedText.slice(0, 500)}
+                  {upload.parsedText.length > 500 ? "…" : ""}
+                </pre>
+              )}
             </div>
           ))}
         </div>

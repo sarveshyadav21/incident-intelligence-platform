@@ -105,16 +105,36 @@ export class IncidentAnalysisWorker extends WorkerHost {
         await this.setJobStatus(trackingId, 'RETRYING', incidentId);
       }
 
+      const attemptNumber = job.attemptsMade + 1;
+
+      await this.prismaService.incidentAnalysisJob.updateMany({
+        where: { trackingId },
+        data: { attemptCount: attemptNumber },
+      });
+
       await this.timelineService.logEvent({
         jobId: trackingId,
         incidentId,
         stage: isFinalAttempt ? 'JOB_FAILED' : 'JOB_RETRYING',
         metadata: {
-          attempt: job.attemptsMade + 1,
+          attempt: attemptNumber,
           maxAttempts,
+          succeeded: false,
           error: error instanceof Error ? error.message : 'Unknown error',
         },
       });
+
+      if (!isFinalAttempt) {
+        await this.timelineService.logEvent({
+          jobId: trackingId,
+          incidentId,
+          stage: 'JOB_RETRY_SCHEDULED',
+          metadata: {
+            nextAttempt: attemptNumber + 1,
+            maxAttempts,
+          },
+        });
+      }
 
       throw error;
     }

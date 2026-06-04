@@ -17,6 +17,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import { ConnectWithMe } from "./connect-with-me";
+
 const navItems = [
   {
     label: "Dashboard",
@@ -37,6 +39,11 @@ const navItems = [
   {
     label: "Analytics",
     href: "/analytics",
+    icon: BarChart3,
+  },
+  {
+    label: "Operations",
+    href: "/admin",
     icon: BarChart3,
   },
   {
@@ -216,10 +223,12 @@ export function Sidebar() {
 
       <div
         className="
-          border-t border-zinc-800
+          space-y-3 border-t border-zinc-800
           p-4
         "
       >
+        <ConnectWithMe collapsed={collapsed} />
+
         <div
           className="
             flex items-center gap-3

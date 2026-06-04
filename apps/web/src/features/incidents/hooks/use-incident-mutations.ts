@@ -8,6 +8,7 @@ import {
   analyzeIncidentLogs,
   createIncident,
   createIncidentFeedback,
+  createRatingFeedback,
   deleteIncidentUpload,
   reanalyzeIncident,
   uploadIncidentFile,
@@ -19,6 +20,7 @@ import type {
   AnalyzeAndStoreInput,
   CreateFeedbackInput,
   CreateIncidentInput,
+  CreateRatingFeedbackInput,
 } from "../types/incident.type";
 
 export function useCreateIncident() {
@@ -113,6 +115,20 @@ export function useCreateIncidentFeedback(incidentId: string) {
     },
     onError: () => {
       toast.error("Failed to save feedback");
+    },
+  });
+}
+
+export function useCreateRatingFeedback(incidentId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CreateRatingFeedbackInput) =>
+      createRatingFeedback(incidentId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: incidentQueryKeys.detail(incidentId),
+      });
     },
   });
 }

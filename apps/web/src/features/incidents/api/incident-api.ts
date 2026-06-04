@@ -2,10 +2,13 @@ import { api } from "../../../lib/axios";
 import { unwrapApiData, type ApiResponse } from "../../../lib/api-response";
 
 import type {
+  AgentPerformanceMetric,
+  AnalysisRun,
   AnalyzeAndStoreInput,
   AnalyzeIncidentResponse,
   CreateIncidentInput,
   CreateFeedbackInput,
+  CreateRatingFeedbackInput,
   EnqueueAnalysisResponse,
   Incident,
   IncidentDetail,
@@ -14,6 +17,9 @@ import type {
   IncidentTrendBucket,
   IncidentUpload,
   JobStatusResponse,
+  ModelUsageMetric,
+  QueueHealth,
+  SimilarIncidentMatch,
 } from "../types/incident.type";
 
 function parseRemediationSteps(
@@ -167,6 +173,73 @@ export async function reanalyzeIncident(
 ): Promise<EnqueueAnalysisResponse> {
   const response = await api.post<ApiResponse<EnqueueAnalysisResponse>>(
     `/incidents/${incidentId}/reanalyze`,
+  );
+
+  return unwrapApiData(response);
+}
+
+export async function getSimilarIncidents(
+  incidentId: string,
+): Promise<SimilarIncidentMatch[]> {
+  const response = await api.get<ApiResponse<SimilarIncidentMatch[]>>(
+    `/incidents/${incidentId}/similar`,
+  );
+
+  return unwrapApiData(response);
+}
+
+export async function getAnalysisRuns(
+  incidentId: string,
+): Promise<AnalysisRun[]> {
+  const response = await api.get<ApiResponse<AnalysisRun[]>>(
+    `/incidents/${incidentId}/analysis-runs`,
+  );
+
+  return unwrapApiData(response).map((run) => ({
+    ...run,
+    remediationSteps: parseRemediationSteps(run.remediationSteps),
+  }));
+}
+
+export async function getRetryHistory(incidentId: string) {
+  const response = await api.get<ApiResponse<unknown[]>>(
+    `/incidents/${incidentId}/retry-history`,
+  );
+
+  return unwrapApiData(response);
+}
+
+export async function createRatingFeedback(
+  incidentId: string,
+  input: CreateRatingFeedbackInput,
+): Promise<IncidentFeedback> {
+  const response = await api.post<ApiResponse<IncidentFeedback>>(
+    `/incidents/${incidentId}/feedback/rating`,
+    input,
+  );
+
+  return unwrapApiData(response);
+}
+
+export async function getQueueHealth(): Promise<QueueHealth> {
+  const response = await api.get<ApiResponse<QueueHealth>>(
+    "/incidents/admin/queue",
+  );
+
+  return unwrapApiData(response);
+}
+
+export async function getAgentMetrics(): Promise<AgentPerformanceMetric[]> {
+  const response = await api.get<ApiResponse<AgentPerformanceMetric[]>>(
+    "/incidents/admin/agents/metrics",
+  );
+
+  return unwrapApiData(response);
+}
+
+export async function getModelUsage(): Promise<ModelUsageMetric[]> {
+  const response = await api.get<ApiResponse<ModelUsageMetric[]>>(
+    "/incidents/admin/models/usage",
   );
 
   return unwrapApiData(response);

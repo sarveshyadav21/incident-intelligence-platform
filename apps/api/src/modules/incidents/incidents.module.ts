@@ -25,6 +25,18 @@ import { SituationJudgeAgent } from './agents/situation-judge.agent';
 import { FileParserService } from './services/file-parser.service';
 import { IncidentUploadService } from './services/incident-upload.service';
 import { IncidentFeedbackService } from './services/incident-feedback.service';
+import { ModelRouterService } from './services/model-router.service';
+import { PromptVersionService } from './services/prompt-version.service';
+import { AgentMetricsService } from './services/agent-metrics.service';
+import { AnalysisRunService } from './services/analysis-run.service';
+import { AuditLogService } from './services/audit-log.service';
+import { AdminQueueService } from './services/admin-queue.service';
+import { JobRecoveryService } from './services/job-recovery.service';
+import { ExecutiveSummaryAgent } from './agents/executive-summary.agent';
+import { PostmortemAgent } from './agents/postmortem.agent';
+import { DependencyGraphAgent } from './agents/dependency-graph.agent';
+import { IncidentReportingService } from './services/incident-reporting.service';
+
 @Module({
   imports: [
     BullModule.registerQueue({
@@ -47,18 +59,28 @@ import { IncidentFeedbackService } from './services/incident-feedback.service';
     EvidenceReviewAgent,
     EvidenceExtractionAgent,
     SituationJudgeAgent,
+    ExecutiveSummaryAgent,
+    PostmortemAgent,
+    DependencyGraphAgent,
     IncidentAnalysisOrchestrator,
     IncidentInputNormalizerService,
     SimilaritySearchService,
     IncidentQueueService,
     IncidentAnalysisWorker,
-    WebsocketModule,
     IncidentEvaluationService,
     TimelineService,
     IncidentsAnalyticsService,
     FileParserService,
     IncidentUploadService,
     IncidentFeedbackService,
+    ModelRouterService,
+    PromptVersionService,
+    AgentMetricsService,
+    AnalysisRunService,
+    AuditLogService,
+    AdminQueueService,
+    JobRecoveryService,
+    IncidentReportingService,
   ],
   exports: [IncidentQueueService],
 })
