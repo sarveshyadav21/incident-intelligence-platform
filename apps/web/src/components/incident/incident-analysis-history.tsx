@@ -17,7 +17,7 @@ export function IncidentAnalysisHistory({ runs, onSelectRun }: Props) {
 
   if (runs.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-muted-foreground">
         Analysis history appears after the first completed run.
       </p>
     );
@@ -25,7 +25,7 @@ export function IncidentAnalysisHistory({ runs, onSelectRun }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 text-xs text-zinc-500">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <History className="h-4 w-4 text-violet-400" />
         {runs.length} analysis run{runs.length === 1 ? "" : "s"}
       </div>
@@ -44,16 +44,16 @@ export function IncidentAnalysisHistory({ runs, onSelectRun }: Props) {
             className={`w-full rounded-xl border px-4 py-3 text-left transition ${
               selected
                 ? "border-violet-500/40 bg-violet-500/5"
-                : "border-zinc-800 bg-zinc-950 hover:border-zinc-700"
+                : "border-border bg-background hover:border-border"
             }`}
           >
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-zinc-200">
                 Analysis Run #{run.runNumber}
               </p>
-              <span className="text-xs text-zinc-500">{run.status}</span>
+              <span className="text-xs text-muted-foreground">{run.status}</span>
             </div>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               {new Date(run.createdAt).toLocaleString()}
             </p>
             {run.confidenceScore != null && (
@@ -89,8 +89,8 @@ function RunComparison({
   }
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-xs text-zinc-400">
-      <p className="font-medium text-zinc-300">Comparison vs Run #{previous.runNumber}</p>
+    <div className="rounded-xl border border-border bg-card/40 p-4 text-xs text-muted-foreground">
+      <p className="font-medium text-foreground/80">Comparison vs Run #{previous.runNumber}</p>
       <p className="mt-2">
         Confidence: {Math.round(previous.confidenceScore ?? 0)}% →{" "}
         {Math.round(selected.confidenceScore ?? 0)}%

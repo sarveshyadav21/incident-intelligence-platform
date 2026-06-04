@@ -39,7 +39,7 @@ export default function IncidentDetailPage({ params }: IncidentPageProps) {
   }, [id]);
 
   if (isLoading) {
-    return <p className="text-zinc-400">Loading investigation workspace...</p>;
+    return <p className="text-muted-foreground">Loading investigation workspace...</p>;
   }
 
   if (isError || !incident) {
@@ -52,7 +52,7 @@ export default function IncidentDetailPage({ params }: IncidentPageProps) {
           <ArrowLeft className="h-4 w-4" />
           Back to incidents
         </Link>
-        <p className="text-zinc-400">Incident not found.</p>
+        <p className="text-muted-foreground">Incident not found.</p>
       </div>
     );
   }

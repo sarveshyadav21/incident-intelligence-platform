@@ -77,14 +77,14 @@ export function IncidentDependencyGraph({ graph }: Props) {
 
   if (!graph || nodes.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-muted-foreground">
         Dependency graph generates after analysis identifies affected systems.
       </p>
     );
   }
 
   return (
-    <div className="h-[420px] overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950">
+    <div className="h-[420px] overflow-hidden rounded-2xl border border-border bg-background">
       <ReactFlow nodes={nodes} edges={edges} fitView proOptions={{ hideAttribution: true }}>
         <Background color="#27272a" gap={20} />
         <Controls />

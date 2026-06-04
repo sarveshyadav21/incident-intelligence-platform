@@ -39,20 +39,20 @@ export function IncidentRatingFeedback({ incidentId }: Props) {
     <div className="space-y-4">
       {CATEGORIES.map((category) => (
         <div key={category.id}>
-          <p className="text-sm text-zinc-400">{category.label}</p>
+          <p className="text-sm text-muted-foreground">{category.label}</p>
           <div className="mt-2 flex gap-1">
             {[1, 2, 3, 4, 5].map((value) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => submitRating(category.id, value)}
-                className="rounded p-1 transition hover:bg-zinc-800"
+                className="rounded p-1 transition hover:bg-muted"
               >
                 <Star
                   className={`h-5 w-5 ${
                     (ratings[category.id] ?? 0) >= value
                       ? "fill-amber-400 text-amber-400"
-                      : "text-zinc-600"
+                      : "text-muted-foreground"
                   }`}
                 />
               </button>

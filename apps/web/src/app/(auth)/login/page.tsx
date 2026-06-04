@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,13 @@ import {
   AuthFooterLink,
   AuthShell,
 } from "@/components/auth/auth-shell";
+import {
+  AuthActions,
+  AuthDivider,
+  AuthFormSection,
+} from "@/components/auth/auth-form-section";
+import { AuthFormField } from "@/components/auth/auth-form-field";
+import { authFieldVariants } from "@/components/auth/auth-motion";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -71,63 +79,65 @@ export default function LoginPage() {
         />
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">Email</label>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            required
-            className="border-zinc-700 bg-zinc-950 text-white"
-          />
-        </div>
+      <form onSubmit={handleSubmit}>
+        <AuthFormSection className="space-y-4">
+          <AuthFormField label="Email">
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              required
+              className="border-border bg-background text-foreground transition focus:border-violet-500/50"
+            />
+          </AuthFormField>
 
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-zinc-400">Password</label>
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            className="border-zinc-700 bg-zinc-950 text-white"
-          />
-        </div>
+          <AuthFormField label="Password">
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="border-border bg-background text-foreground transition focus:border-violet-500/50"
+            />
+          </AuthFormField>
 
-        <Button
-          type="submit"
-          disabled={loading}
-          className="h-10 w-full bg-violet-600 text-white hover:bg-violet-500"
-        >
-          {loading ? <Loader2 className="animate-spin" /> : "Sign in"}
-        </Button>
+          <motion.div variants={authFieldVariants}>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="h-10 w-full bg-violet-600 text-white shadow-lg shadow-violet-900/30 hover:bg-violet-500"
+            >
+              {loading ? <Loader2 className="animate-spin" /> : "Sign in"}
+            </Button>
+          </motion.div>
+        </AuthFormSection>
       </form>
 
-      <div className="my-6 flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-800" />
-        <span className="text-xs text-zinc-500">or</span>
-        <div className="h-px flex-1 bg-zinc-800" />
-      </div>
+      <AuthDivider />
 
-      <div className="space-y-3">
-        <GoogleSignInButton onCredential={handleGoogle} disabled={loading} />
+      <AuthActions>
+        <motion.div variants={authFieldVariants}>
+          <GoogleSignInButton onCredential={handleGoogle} disabled={loading} />
+        </motion.div>
 
-        <Button
-          type="button"
-          variant="outline"
-          disabled={guestLoading || loading}
-          onClick={handleGuest}
-          className="h-10 w-full border-zinc-700 bg-transparent text-zinc-200 hover:bg-zinc-800"
-        >
-          {guestLoading ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            "Continue as guest"
-          )}
-        </Button>
-      </div>
+        <motion.div variants={authFieldVariants}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={guestLoading || loading}
+            onClick={handleGuest}
+            className="h-10 w-full border-border bg-transparent text-zinc-200 hover:border-violet-500/30 hover:bg-muted"
+          >
+            {guestLoading ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              "Continue as guest"
+            )}
+          </Button>
+        </motion.div>
+      </AuthActions>
     </AuthShell>
   );
 }

@@ -30,14 +30,14 @@ export function IncidentRetryHistory({ incidentId }: Props) {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-zinc-500">Loading retry history...</p>;
+    return <p className="text-sm text-muted-foreground">Loading retry history...</p>;
   }
 
   const events = (data ?? []) as RetryEvent[];
 
   if (events.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-muted-foreground">
         No retry attempts recorded for this incident.
       </p>
     );
@@ -50,7 +50,7 @@ export function IncidentRetryHistory({ incidentId }: Props) {
       {attempts.map((attempt) => (
         <li
           key={attempt.label}
-          className="flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3"
+          className="flex items-start gap-3 rounded-xl border border-border bg-background px-4 py-3"
         >
           {attempt.succeeded ? (
             <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-400" />
@@ -62,7 +62,7 @@ export function IncidentRetryHistory({ incidentId }: Props) {
           <div>
             <p className="text-sm text-zinc-200">{attempt.label}</p>
             {attempt.detail && (
-              <p className="mt-1 text-xs text-zinc-500">{attempt.detail}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{attempt.detail}</p>
             )}
           </div>
         </li>

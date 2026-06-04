@@ -31,8 +31,8 @@ export default function AdminDashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white">Operations Dashboard</h1>
-        <p className="mt-2 text-zinc-400">
+        <h1 className="text-3xl font-bold text-foreground">Operations Dashboard</h1>
+        <p className="mt-2 text-muted-foreground">
           Queue health, agent performance, and model usage analytics
         </p>
       </div>
@@ -60,20 +60,20 @@ export default function AdminDashboardPage() {
         />
       </section>
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-        <p className="text-sm text-zinc-400">
+      <div className="rounded-2xl border border-border bg-background p-4">
+        <p className="text-sm text-muted-foreground">
           System health:{" "}
-          <span className="font-medium text-white">
+          <span className="font-medium text-foreground">
             {queue.data?.health ?? "loading"}
           </span>
         </p>
       </div>
 
       <section>
-        <h2 className="text-lg font-semibold text-white">Agent performance</h2>
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-800">
+        <h2 className="text-lg font-semibold text-foreground">Agent performance</h2>
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-border">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-800 text-zinc-500">
+            <thead className="border-b border-border text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Agent</th>
                 <th className="px-4 py-3">Avg duration</th>
@@ -83,15 +83,15 @@ export default function AdminDashboardPage() {
             </thead>
             <tbody>
               {(agents.data ?? []).map((row) => (
-                <tr key={row.agent} className="border-b border-zinc-900">
+                <tr key={row.agent} className="border-b border-border">
                   <td className="px-4 py-3 text-zinc-200">{row.agent}</td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {(row.avgDurationMs / 1000).toFixed(1)}s
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {Math.round(row.successRate * 100)}%
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">{row.runCount}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.runCount}</td>
                 </tr>
               ))}
             </tbody>
@@ -100,10 +100,10 @@ export default function AdminDashboardPage() {
       </section>
 
       <section>
-        <h2 className="text-lg font-semibold text-white">Model usage</h2>
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-800">
+        <h2 className="text-lg font-semibold text-foreground">Model usage</h2>
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-border">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-800 text-zinc-500">
+            <thead className="border-b border-border text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Model</th>
                 <th className="px-4 py-3">Avg time</th>
@@ -114,18 +114,18 @@ export default function AdminDashboardPage() {
             </thead>
             <tbody>
               {(models.data ?? []).map((row) => (
-                <tr key={row.model} className="border-b border-zinc-900">
+                <tr key={row.model} className="border-b border-border">
                   <td className="px-4 py-3 text-zinc-200">{row.model}</td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {(row.avgExecutionMs / 1000).toFixed(1)}s
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {row.estimatedTokens.toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-3 text-muted-foreground">
                     ${row.estimatedCost}
                   </td>
-                  <td className="px-4 py-3 text-zinc-400">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {Math.round(row.successRate * 100)}%
                   </td>
                 </tr>
@@ -140,9 +140,9 @@ export default function AdminDashboardPage() {
 
 function MetricCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-white">{value}</p>
+    <div className="rounded-2xl border border-border bg-background p-4">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-foreground">{value}</p>
     </div>
   );
 }

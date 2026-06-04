@@ -9,7 +9,7 @@ type Props = {
 export function IncidentExecutiveSummary({ summary }: Props) {
   if (!summary) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-muted-foreground">
         Executive summary generates automatically after analysis completes.
       </p>
     );
@@ -28,12 +28,12 @@ export function IncidentExecutiveSummary({ summary }: Props) {
       {sections.map((section) => (
         <div
           key={section.title}
-          className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-4"
+          className="rounded-xl border border-border bg-card/80 p-4"
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-400">
             {section.title}
           </p>
-          <p className="mt-2 text-sm leading-6 text-zinc-300">{section.body}</p>
+          <p className="mt-2 text-sm leading-6 text-foreground/80">{section.body}</p>
         </div>
       ))}
     </div>

@@ -36,7 +36,7 @@ export function IncidentUploadPanel({ incidentId, uploads }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm text-zinc-300 transition hover:border-violet-500/30 hover:text-white">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm text-foreground/80 transition hover:border-violet-500/30 hover:text-foreground">
           <Upload className="h-4 w-4" />
           {uploadFile.isPending ? "Uploading..." : "Upload evidence"}
           <input
@@ -52,20 +52,20 @@ export function IncidentUploadPanel({ incidentId, uploads }: Props) {
           size="sm"
           disabled={reanalyze.isPending}
           onClick={() => reanalyze.mutate(incidentId)}
-          className="gap-2 border-zinc-800 bg-zinc-900 text-zinc-300 hover:text-white"
+          className="gap-2 border-border bg-card text-foreground/80 hover:text-foreground"
         >
           <RefreshCw className="h-4 w-4" />
           Re-run AI with uploads
         </Button>
       </div>
 
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-muted-foreground">
         Supports log files, screenshots, PDFs, Datadog exports (JSON), and
         incident reports.
       </p>
 
       {uploads.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-muted-foreground">
           No attachments yet. Upload evidence to enrich analysis.
         </p>
       ) : (
@@ -73,7 +73,7 @@ export function IncidentUploadPanel({ incidentId, uploads }: Props) {
           {uploads.map((upload) => (
             <div
               key={upload.id}
-              className="rounded-xl border border-zinc-800 bg-zinc-950 p-4"
+              className="rounded-xl border border-border bg-background p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
@@ -84,7 +84,7 @@ export function IncidentUploadPanel({ incidentId, uploads }: Props) {
                   )}
                   <div>
                     <p className="text-sm text-zinc-200">{upload.fileName}</p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-muted-foreground">
                       {upload.status ?? "PARSED"} · {upload.mimeType}
                       {upload.fileSize
                         ? ` · ${(upload.fileSize / 1024).toFixed(1)} KB`
@@ -95,7 +95,7 @@ export function IncidentUploadPanel({ incidentId, uploads }: Props) {
                 <button
                   type="button"
                   onClick={() => deleteUpload.mutate(upload.id)}
-                  className="rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-800 hover:text-red-400"
+                  className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-red-400"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -105,12 +105,12 @@ export function IncidentUploadPanel({ incidentId, uploads }: Props) {
                 <img
                   src={upload.previewUrl}
                   alt={upload.fileName}
-                  className="mt-3 max-h-48 rounded-lg border border-zinc-800 object-contain"
+                  className="mt-3 max-h-48 rounded-lg border border-border object-contain"
                 />
               )}
 
               {upload.parsedText && !upload.mimeType?.startsWith("image/") && (
-                <pre className="mt-3 max-h-32 overflow-auto rounded-lg border border-zinc-800 bg-black/40 p-3 text-xs text-zinc-500">
+                <pre className="mt-3 max-h-32 overflow-auto rounded-lg border border-border bg-background/40 p-3 text-xs text-muted-foreground">
                   {upload.parsedText.slice(0, 500)}
                   {upload.parsedText.length > 500 ? "…" : ""}
                 </pre>

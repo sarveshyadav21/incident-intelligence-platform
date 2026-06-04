@@ -63,7 +63,7 @@ export function IncidentDetailsDrawer({ incidentId, onClose }: Props) {
           className="
             fixed inset-0 z-50
             flex justify-end
-            bg-black/50
+            bg-background/50
             backdrop-blur-sm
           "
           onClick={onClose}
@@ -88,13 +88,13 @@ export function IncidentDetailsDrawer({ incidentId, onClose }: Props) {
             className="
               h-full w-full max-w-3xl
               overflow-y-auto
-              border-l border-zinc-800
-              bg-zinc-950
+              border-l border-border
+              bg-background
               p-8
             "
           >
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-500">
+              <p className="text-sm font-medium text-muted-foreground">
                 Incident investigation
               </p>
 
@@ -102,10 +102,10 @@ export function IncidentDetailsDrawer({ incidentId, onClose }: Props) {
                 onClick={onClose}
                 className="
                   rounded-full p-2
-                  text-zinc-400
+                  text-muted-foreground
                   transition
-                  hover:bg-zinc-800
-                  hover:text-white
+                  hover:bg-muted
+                  hover:text-foreground
                 "
               >
                 <X size={20} />
@@ -113,7 +113,7 @@ export function IncidentDetailsDrawer({ incidentId, onClose }: Props) {
             </div>
 
             {isLoading || !incident ? (
-              <p className="mt-8 text-zinc-500">Loading incident details...</p>
+              <p className="mt-8 text-muted-foreground">Loading incident details...</p>
             ) : (
               <div className="mt-6 min-w-0">
                 <IncidentDetailContent

@@ -45,11 +45,11 @@ export function ConnectWithMe({ collapsed = false }: Props) {
 
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <p className="flex items-center gap-1.5 text-sm font-semibold text-white">
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
               {PORTFOLIO_CONNECT_LABEL}
               <ArrowUpRight className="h-3.5 w-3.5 text-violet-400 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </p>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Portfolio · AI chat · Projects
             </p>
           </div>
@@ -57,12 +57,12 @@ export function ConnectWithMe({ collapsed = false }: Props) {
       </div>
 
       {!collapsed && (
-        <div className="relative mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-          <span className="inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-1">
+        <div className="relative mt-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full bg-background/30 px-2 py-1">
             <Sparkles className="h-3 w-3 text-fuchsia-400" />
             Gemini AI
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-1">
+          <span className="inline-flex items-center gap-1 rounded-full bg-background/30 px-2 py-1">
             <MessageCircle className="h-3 w-3 text-cyan-400" />
             Live chat
           </span>

@@ -19,7 +19,7 @@ export function IncidentCard({ incident, liveStage }: Props) {
     CRITICAL: "border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.15)]",
     HIGH: "border-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.12)]",
     MEDIUM: "border-yellow-500/20",
-    LOW: "border-zinc-800",
+    LOW: "border-border",
   };
 
   const statusStyles = {
@@ -35,15 +35,15 @@ export function IncidentCard({ incident, liveStage }: Props) {
     <motion.div
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
-      className={`rounded-3xl border bg-zinc-900 p-6 ${
+      className={`rounded-3xl border bg-card p-6 ${
         severityStyles[displaySeverity as keyof typeof severityStyles] ??
         severityStyles.LOW
       }`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-white">{incident.title}</h3>
-          <p className="mt-2 line-clamp-2 text-sm text-zinc-400">
+          <h3 className="text-lg font-semibold text-foreground">{incident.title}</h3>
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
             {incident.aiSummary ?? incident.summary ?? "No summary yet"}
           </p>
 
@@ -64,7 +64,7 @@ export function IncidentCard({ incident, liveStage }: Props) {
             {incident.affectedServices?.map((service) => (
               <div
                 key={service}
-                className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-[11px] text-zinc-400"
+                className="rounded-full border border-border bg-card px-3 py-1 text-[11px] text-muted-foreground"
               >
                 {service}
               </div>
@@ -107,7 +107,7 @@ export function IncidentCard({ incident, liveStage }: Props) {
               Retry
             </button>
           )}
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-muted-foreground">
             {new Date(incident.createdAt).toLocaleString()}
           </p>
           <Link

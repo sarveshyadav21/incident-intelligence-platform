@@ -16,7 +16,7 @@ export function IncidentPostmortem({ postmortem }: Props) {
 
   if (!postmortem) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-muted-foreground">
         Postmortem generates automatically after successful analysis.
       </p>
     );
@@ -62,7 +62,7 @@ export function IncidentPostmortem({ postmortem }: Props) {
         <Button
           size="sm"
           variant="outline"
-          className="gap-2 border-zinc-800"
+          className="gap-2 border-border"
           onClick={() => setView(view === "preview" ? "markdown" : "preview")}
         >
           <FileText className="h-4 w-4" />
@@ -71,7 +71,7 @@ export function IncidentPostmortem({ postmortem }: Props) {
         <Button
           size="sm"
           variant="outline"
-          className="gap-2 border-zinc-800"
+          className="gap-2 border-border"
           onClick={copyToClipboard}
         >
           <Copy className="h-4 w-4" />
@@ -80,7 +80,7 @@ export function IncidentPostmortem({ postmortem }: Props) {
         <Button
           size="sm"
           variant="outline"
-          className="gap-2 border-zinc-800"
+          className="gap-2 border-border"
           onClick={downloadMarkdown}
         >
           <Download className="h-4 w-4" />
@@ -89,7 +89,7 @@ export function IncidentPostmortem({ postmortem }: Props) {
         <Button
           size="sm"
           variant="outline"
-          className="gap-2 border-zinc-800"
+          className="gap-2 border-border"
           onClick={downloadPdf}
         >
           <Download className="h-4 w-4" />
@@ -102,19 +102,19 @@ export function IncidentPostmortem({ postmortem }: Props) {
           {Object.entries(sections).map(([key, value]) => (
             <div
               key={key}
-              className="rounded-xl border border-zinc-800 bg-zinc-950 p-4"
+              className="rounded-xl border border-border bg-background p-4"
             >
               <p className="text-xs font-semibold uppercase tracking-wide text-emerald-400">
                 {formatSectionTitle(key)}
               </p>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-300">
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground/80">
                 {value}
               </p>
             </div>
           ))}
         </div>
       ) : (
-        <pre className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-xs leading-6 text-zinc-400">
+        <pre className="overflow-x-auto rounded-xl border border-border bg-background p-4 text-xs leading-6 text-muted-foreground">
           {postmortem.markdown}
         </pre>
       )}

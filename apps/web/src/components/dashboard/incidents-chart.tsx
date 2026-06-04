@@ -7,7 +7,9 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  CartesianGrid,
 } from "recharts";
+import { useChartTheme } from "@/lib/chart-theme";
 
 const data = [
   { time: "10:00", incidents: 2 },
@@ -19,12 +21,14 @@ const data = [
 ];
 
 export function IncidentsChart() {
+  const chart = useChartTheme();
+
   return (
     <div
       className="
         rounded-3xl border
-        border-zinc-800
-        bg-zinc-900 p-6
+        border-border
+        bg-card p-6
       "
     >
       <div
@@ -37,7 +41,7 @@ export function IncidentsChart() {
           <h2
             className="
               text-lg font-semibold
-              text-white
+              text-foreground
             "
           >
             Incident Trends
@@ -46,7 +50,7 @@ export function IncidentsChart() {
           <p
             className="
               mt-1 text-sm
-              text-zinc-400
+              text-muted-foreground
             "
           >
             Realtime incident activity
@@ -57,10 +61,18 @@ export function IncidentsChart() {
       <div className="h-72 min-w-0">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data}>
-            <XAxis dataKey="time" />
-            <YAxis />
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
+            <XAxis dataKey="time" stroke={chart.axis} />
+            <YAxis stroke={chart.axis} />
 
-            <Tooltip />
+            <Tooltip
+              contentStyle={{
+                background: chart.tooltipBg,
+                border: `1px solid ${chart.tooltipBorder}`,
+                borderRadius: "12px",
+                color: chart.tooltipText,
+              }}
+            />
 
             <Line
               type="monotone"

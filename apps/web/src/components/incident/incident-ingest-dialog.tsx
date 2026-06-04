@@ -52,10 +52,10 @@ export function IncidentIngestDialog() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] overflow-y-auto border-zinc-800 bg-zinc-950 text-white sm:max-w-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto border-border bg-background text-foreground sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Submit incident for AI analysis</DialogTitle>
-          <DialogDescription className="text-zinc-400">
+          <DialogDescription className="text-muted-foreground">
             Paste logs or alert text. The platform will embed, retrieve similar
             incidents, run multi-agent analysis, and persist results.
           </DialogDescription>
@@ -63,19 +63,19 @@ export function IncidentIngestDialog() {
 
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-medium uppercase text-zinc-500">
+            <label className="text-xs font-medium uppercase text-muted-foreground">
               Title
             </label>
             <Input
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               placeholder="Payment API timeout spike"
-              className="mt-2 border-zinc-800 bg-zinc-900"
+              className="mt-2 border-border bg-card"
             />
           </div>
 
           <div>
-            <label className="text-xs font-medium uppercase text-zinc-500">
+            <label className="text-xs font-medium uppercase text-muted-foreground">
               Initial severity
             </label>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -87,7 +87,7 @@ export function IncidentIngestDialog() {
                   className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                     severity === level
                       ? "border-violet-500/30 bg-violet-500/10 text-violet-300"
-                      : "border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                      : "border-border text-muted-foreground hover:border-border"
                   }`}
                 >
                   {level}
@@ -97,14 +97,14 @@ export function IncidentIngestDialog() {
           </div>
 
           <div>
-            <label className="text-xs font-medium uppercase text-zinc-500">
+            <label className="text-xs font-medium uppercase text-muted-foreground">
               Logs / alert payload
             </label>
             <Textarea
               value={logs}
               onChange={(event) => setLogs(event.target.value)}
               placeholder="Paste stack traces, metrics alerts, or log excerpts..."
-              className="mt-2 min-h-48 border-zinc-800 bg-zinc-900 font-mono text-sm"
+              className="mt-2 min-h-48 border-border bg-card font-mono text-sm"
             />
           </div>
 

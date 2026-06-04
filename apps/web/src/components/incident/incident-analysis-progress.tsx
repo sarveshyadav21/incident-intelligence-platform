@@ -24,7 +24,7 @@ export function IncidentAnalysisProgress({
   const isProcessing = incidentStatus === "PROCESSING" || Boolean(liveStage);
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4">
+    <div className="rounded-2xl border border-border bg-muted/50 p-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-semibold uppercase tracking-wide text-violet-400">
           Analysis progress
@@ -44,12 +44,12 @@ export function IncidentAnalysisProgress({
             <span
               className={
                 step.status === "active"
-                  ? "font-medium text-white"
+                  ? "font-medium text-foreground"
                   : step.status === "completed"
-                    ? "text-zinc-300"
+                    ? "text-foreground/80"
                     : step.status === "failed"
                       ? "text-red-400"
-                      : "text-zinc-600"
+                      : "text-muted-foreground"
               }
             >
               {step.label}

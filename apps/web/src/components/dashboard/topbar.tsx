@@ -7,6 +7,7 @@ import { Search, Bell, Command, Circle, ChevronDown, Sparkles } from "lucide-rea
 import { useSocket } from "../../providers/socket-provider";
 import { PORTFOLIO_CONNECT_LABEL, PORTFOLIO_URL } from "../../lib/portfolio";
 import { useAuth } from "../../providers/auth-provider";
+import { ThemeToggle } from "../theme/theme-toggle";
 
 export function Topbar() {
   const { isConnected } = useSocket();
@@ -23,8 +24,8 @@ export function Topbar() {
     <header
       className="
         sticky top-0 z-40
-        border-b border-zinc-800
-        bg-zinc-950/80
+        border-b border-border
+        bg-card/80
         backdrop-blur-xl
       "
     >
@@ -42,20 +43,20 @@ export function Topbar() {
             className="
               flex items-center gap-3
               rounded-2xl border
-              border-zinc-800
-              bg-zinc-900/80
+              border-border
+              bg-card/80
               px-4 py-3
             "
           >
-            <Search size={18} className="text-zinc-500" />
+            <Search size={18} className="text-muted-foreground" />
 
             <input
               placeholder="Search incidents..."
               className="
                 w-[260px] bg-transparent
-                text-sm text-white
+                text-sm text-foreground
                 outline-none
-                placeholder:text-zinc-500
+                placeholder:text-muted-foreground
               "
             />
 
@@ -63,9 +64,9 @@ export function Topbar() {
               className="
                 flex items-center gap-1
                 rounded-lg border
-                border-zinc-700
+                border-border
                 px-2 py-1
-                text-xs text-zinc-400
+                text-xs text-muted-foreground
               "
             >
               <Command size={12} />K
@@ -101,6 +102,8 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-4">
+          <ThemeToggle />
+
           <Link
             href={PORTFOLIO_URL}
             target="_blank"
@@ -111,7 +114,7 @@ export function Topbar() {
               from-violet-600/20 to-fuchsia-600/10
               px-4 py-2.5 text-sm font-medium
               text-violet-200 transition-all duration-200
-              hover:border-violet-400/50 hover:text-white
+              hover:border-violet-400/50 hover:text-foreground
               md:inline-flex
             "
           >
@@ -124,12 +127,12 @@ export function Topbar() {
               relative flex h-11 w-11
               items-center justify-center
               rounded-2xl border
-              border-zinc-800
-              bg-zinc-900/80
-              text-zinc-400
+              border-border
+              bg-card/80
+              text-muted-foreground
               transition-all duration-200
-              hover:bg-zinc-800
-              hover:text-white
+              hover:bg-muted
+              hover:text-foreground
             "
           >
             <Bell size={18} />
@@ -152,12 +155,12 @@ export function Topbar() {
             className="
               flex items-center gap-3
               rounded-2xl border
-              border-zinc-800
-              bg-zinc-900/80
+              border-border
+              bg-card/80
               px-3 py-2
               transition-all duration-200
               hover:border-violet-500/30
-              hover:bg-zinc-800
+              hover:bg-muted
             "
           >
             <div
@@ -174,13 +177,13 @@ export function Topbar() {
             </div>
 
             <div className="hidden text-left md:block">
-              <p className="text-sm font-medium text-white">{displayName}</p>
-              <p className="text-xs text-zinc-400">
+              <p className="text-sm font-medium text-foreground">{displayName}</p>
+              <p className="text-xs text-muted-foreground">
                 {user?.isGuest ? "Guest session" : user?.email ?? "Signed in"}
               </p>
             </div>
 
-            <ChevronDown size={16} className="text-zinc-500" />
+            <ChevronDown size={16} className="text-muted-foreground" />
           </motion.button>
         </div>
       </div>

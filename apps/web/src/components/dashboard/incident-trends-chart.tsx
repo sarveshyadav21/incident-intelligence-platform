@@ -11,6 +11,7 @@ import {
   Brush,
 } from "recharts";
 import { useState } from "react";
+import { useChartTheme } from "@/lib/chart-theme";
 
 function formatHour(time: string, format: "12h" | "24h") {
   if (format === "24h") {
@@ -38,6 +39,7 @@ type Props = {
 };
 
 export function IncidentTrendsChart({ data, timeFormat }: Props) {
+  const chart = useChartTheme();
   const [visibleRange, setVisibleRange] = useState({
     start: 0,
     end: 23,
@@ -46,8 +48,8 @@ export function IncidentTrendsChart({ data, timeFormat }: Props) {
     <div
       className="
   rounded-3xl border
-  border-zinc-800
-  bg-zinc-900 p-6
+  border-border
+  bg-card p-6
   [&_*:focus]:outline-none
   [&_*:focus]:ring-0
 "
@@ -56,7 +58,7 @@ export function IncidentTrendsChart({ data, timeFormat }: Props) {
         <h2
           className="
             text-lg font-semibold
-            text-white
+            text-foreground
           "
         >
           Incident Trends
@@ -65,7 +67,7 @@ export function IncidentTrendsChart({ data, timeFormat }: Props) {
         <p
           className="
             mt-1 text-sm
-            text-zinc-400
+            text-muted-foreground
           "
         >
           Realtime incident severity trends
@@ -89,32 +91,32 @@ export function IncidentTrendsChart({ data, timeFormat }: Props) {
               </linearGradient>
             </defs>
 
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+            <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
 
             <XAxis
               dataKey="time"
-              stroke="#71717a"
+              stroke={chart.axis}
               interval={0}
               minTickGap={20}
               tickFormatter={(value) => formatHour(value, timeFormat)}
             />
 
-            <YAxis stroke="#71717a" />
+            <YAxis stroke={chart.axis} />
 
             <Tooltip
               contentStyle={{
-                background: "#09090b",
-                border: "1px solid #27272a",
+                background: chart.tooltipBg,
+                border: `1px solid ${chart.tooltipBorder}`,
                 borderRadius: "16px",
-                color: "#fff",
+                color: chart.tooltipText,
                 backdropFilter: "blur(12px)",
               }}
               labelStyle={{
-                color: "#a1a1aa",
+                color: chart.axis,
                 fontWeight: 600,
               }}
               itemStyle={{
-                color: "#fff",
+                color: chart.tooltipText,
               }}
               cursor={false}
             />
@@ -205,9 +207,9 @@ export function IncidentTrendsChart({ data, timeFormat }: Props) {
             <Brush
               dataKey="time"
               height={30}
-              stroke="#52525b"
+              stroke={chart.axis}
               travellerWidth={12}
-              fill="#18181b"
+              fill={chart.tooltipBg}
               tickFormatter={(value) => formatHour(value, timeFormat)}
             />
           </AreaChart>

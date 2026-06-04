@@ -9,7 +9,7 @@ type Props = {
 export function IncidentAgentLifecycle({ events }: Props) {
   if (events.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-muted-foreground">
         Agent lifecycle events will appear here during analysis.
       </p>
     );
@@ -20,16 +20,16 @@ export function IncidentAgentLifecycle({ events }: Props) {
       {events.map((event, index) => (
         <div
           key={`${event.agent}-${event.timestamp}-${index}`}
-          className={`rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 transition ${
+          className={`rounded-xl border border-border bg-card/60 p-3 transition ${
             event.status === "STARTED" ? "animate-pulse" : ""
           }`}
         >
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium capitalize text-white">
+              <p className="text-sm font-medium capitalize text-foreground">
                 {event.agent}
               </p>
-              <p className="mt-0.5 text-xs text-zinc-500">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {new Date(event.timestamp).toLocaleTimeString()}
               </p>
             </div>
@@ -46,7 +46,7 @@ export function IncidentAgentLifecycle({ events }: Props) {
             </span>
           </div>
           {event.durationMs != null && (
-            <p className="mt-2 text-xs text-zinc-500">
+            <p className="mt-2 text-xs text-muted-foreground">
               {(event.durationMs / 1000).toFixed(1)}s
             </p>
           )}
