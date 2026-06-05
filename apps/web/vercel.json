@@ -1,0 +1,4 @@
+{
+  "installCommand": "cd ../.. && corepack enable && corepack prepare pnpm@9.15.9 --activate && pnpm install --filter web...",
+  "buildCommand": "pnpm run build"
+}
