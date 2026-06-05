@@ -6,7 +6,9 @@ import { io } from "socket.io-client";
 
 export default function SocketTestPage() {
   useEffect(() => {
-    const socket = io("http://localhost:4000");
+    const socket = io(
+      process.env.NEXT_PUBLIC_WS_URL ?? "http://localhost:4000",
+    );
 
     socket.on("connect", () => {
       console.log("Connected:", socket.id);

@@ -1,6 +1,9 @@
 import { io } from "socket.io-client";
 
-export const socket = io("http://localhost:4000", {
+const wsUrl =
+  process.env.NEXT_PUBLIC_WS_URL ?? "http://localhost:4000";
+
+export const socket = io(wsUrl, {
   autoConnect: false,
 });
 socket.on("connect", () => {
